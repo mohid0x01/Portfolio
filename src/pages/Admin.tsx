@@ -596,6 +596,16 @@ const AdminPage = () => {
                 );
               })}
             </div>
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="glass p-2 rounded-xl text-muted-foreground hover:text-foreground transition-colors"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            {/* Realtime notifications */}
+            <NotificationBell />
           </div>
         </header>
 
