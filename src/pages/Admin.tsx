@@ -57,6 +57,7 @@ type TabId =
   | "health"
   | "vault"
   | "notes"
+  | "bugbounty"
   | "settings";
 
 interface Tab {
@@ -70,19 +71,20 @@ interface Tab {
 
 const TABS: Tab[] = [
   // Main
-  { id: "overview",  label: "Overview",   icon: LayoutDashboard, group: "main" },
-  { id: "analytics", label: "Analytics",  icon: BarChart3,       group: "main" },
-  { id: "visitors",  label: "Intel",       icon: Eye,             group: "main", badge: "LIVE", badgeColor: "secondary" },
-  { id: "projects",  label: "Projects",    icon: Layers,          group: "main" },
+  { id: "overview",   label: "Overview",    icon: LayoutDashboard, group: "main" },
+  { id: "analytics",  label: "Analytics",   icon: BarChart3,       group: "main" },
+  { id: "visitors",   label: "Intel",        icon: Eye,             group: "main", badge: "LIVE", badgeColor: "secondary" },
+  { id: "projects",   label: "Projects",     icon: Layers,          group: "main" },
   // Tools
-  { id: "security",  label: "Security",    icon: Shield,          group: "tools", badge: "8", badgeColor: "destructive" },
-  { id: "terminal",  label: "Terminal",    icon: Terminal,        group: "tools" },
-  { id: "network",   label: "Network",     icon: Wifi,            group: "tools" },
-  { id: "vault",     label: "File Vault",  icon: FolderLock,      group: "tools" },
+  { id: "security",   label: "Security",     icon: Shield,          group: "tools", badge: "8", badgeColor: "destructive" },
+  { id: "terminal",   label: "Terminal",     icon: Terminal,        group: "tools" },
+  { id: "network",    label: "Network",      icon: Wifi,            group: "tools" },
+  { id: "vault",      label: "File Vault",   icon: FolderLock,      group: "tools" },
+  { id: "bugbounty",  label: "Bug Bounty",   icon: Ghost,           group: "tools", badge: "NEW", badgeColor: "primary" },
   // System
-  { id: "health",    label: "Health",      icon: Server,          group: "system", badge: "●", badgeColor: "secondary" },
-  { id: "notes",     label: "Notes",       icon: StickyNote,      group: "system" },
-  { id: "settings",  label: "Settings",    icon: Settings,        group: "system" },
+  { id: "health",     label: "Health",       icon: Server,          group: "system", badge: "●", badgeColor: "secondary" },
+  { id: "notes",      label: "Notes",        icon: StickyNote,      group: "system" },
+  { id: "settings",   label: "Settings",     icon: Settings,        group: "system" },
 ];
 
 // ── Realtime Activity Feed ────────────────────────────────────────────────────

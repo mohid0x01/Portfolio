@@ -299,6 +299,8 @@ export function VisitorLogs({ countryFilter }: VisitorLogsProps) {
   }, []);
 
   const filtered = logs.filter((l) => {
+    // Country filter from map click
+    if (countryFilter && l.country_code !== countryFilter) return false;
     if (!search) return true;
     const s = search.toLowerCase();
     return [l.ip_address, l.country, l.city, l.browser, l.os, l.device_type, l.fingerprint, l.page_url]
