@@ -47,7 +47,7 @@ export function ProjectsSection({ projects }: ProjectsProps) {
           </p>
           <h2 className="section-title text-5xl">Projects</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            A curated collection of things I've built — from distributed systems to pixel-perfect interfaces.
+            Security tools, web apps, and open-source projects — built for hackers, researchers, and curious minds.
           </p>
         </div>
 

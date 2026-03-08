@@ -7,9 +7,9 @@ interface SkillsProps {
 }
 
 const categoryLabels: Record<string, string> = {
-  frontend: "Frontend",
-  backend: "Backend",
-  devops: "DevOps & Cloud",
+  frontend: "Scripting & OSINT",
+  backend: "Offensive Security",
+  devops: "Security Tools",
   design: "Design",
   other: "Other",
 };
@@ -42,7 +42,7 @@ export function SkillsSection({ skills }: SkillsProps) {
           </p>
           <h2 className="section-title text-5xl">Skills</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Technologies I wield with precision — from pixel-pushing to production-grade infrastructure.
+            Tools, techniques, and languages in my offensive security arsenal — from recon to exploitation.
           </p>
         </div>
 

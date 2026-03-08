@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Github, Linkedin, Twitter, Mail, Download, ArrowDown, Sparkles } from "lucide-react";
+import { Github, Linkedin, Twitter, Mail, Download, ArrowDown, Shield } from "lucide-react";
 import { mockProfile, mockStats } from "@/lib/mockData";
+import mohidAvatar from "@/assets/mohid-avatar.png";
 
 export function HeroSection() {
   const statIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -11,32 +12,32 @@ export function HeroSection() {
     ),
     Star: ({ className }) => (
       <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
       </svg>
     ),
     Calendar: ({ className }) => (
       <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
     GitMerge: ({ className }) => (
       <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 7.5v-3m0 3a3 3 0 100 6m0-6a3 3 0 110 6m0 0v3m9-9v3m0 0a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
       </svg>
     ),
   };
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Radial glow background */}
+      {/* Background glow */}
       <div className="absolute inset-0 bg-hero-glow" />
 
       {/* Grid pattern */}
       <div
-        className="absolute inset-0 opacity-30"
+        className="absolute inset-0 opacity-20"
         style={{
           backgroundImage:
-            "linear-gradient(hsl(0 0% 100% / 0.03) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 100% / 0.03) 1px, transparent 1px)",
+            "linear-gradient(hsl(0 0% 100% / 0.04) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 100% / 0.04) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }}
       />
@@ -56,17 +57,15 @@ export function HeroSection() {
       />
 
       <div className="relative z-10 container mx-auto px-6 py-20 flex flex-col items-center text-center">
-        {/* Badge */}
+        {/* Status badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 text-sm"
         >
-          <Sparkles className="w-4 h-4 text-secondary" />
-          <span className="text-muted-foreground">
-            Available for new opportunities •{" "}
-          </span>
+          <Shield className="w-4 h-4 text-secondary" />
+          <span className="text-muted-foreground">CEH Certified •</span>
           <span className="text-secondary font-medium">{mockProfile.location}</span>
         </motion.div>
 
@@ -77,27 +76,26 @@ export function HeroSection() {
           transition={{ type: "spring", stiffness: 120, delay: 0.1 }}
           className="relative mb-8"
         >
-          <div className="w-32 h-32 rounded-full glass flex items-center justify-center text-4xl font-bold relative overflow-hidden animate-pulse-glow">
-            <div
-              className="absolute inset-0 opacity-20"
-              style={{ background: "var(--gradient-primary)" }}
+          <div className="w-32 h-32 rounded-full overflow-hidden relative animate-pulse-glow border-2 border-primary/30">
+            <img
+              src={mohidAvatar}
+              alt="Muhammad Mohid"
+              className="w-full h-full object-cover"
             />
-            <span className="relative z-10 gradient-text">
-              {mockProfile.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")}
-            </span>
+            <div className="absolute inset-0 rounded-full"
+              style={{ background: "linear-gradient(135deg, hsl(261 87% 50% / 0.1), transparent)" }}
+            />
           </div>
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             className="absolute -inset-2 rounded-full border border-primary/20 border-dashed"
           />
-          <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-secondary shadow-teal-sm" />
+          {/* Online indicator */}
+          <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-secondary border-2 border-background shadow-teal-sm" />
         </motion.div>
 
-        {/* Name & tagline */}
+        {/* Name */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -107,6 +105,7 @@ export function HeroSection() {
           <span className="gradient-text">{mockProfile.name}</span>
         </motion.h1>
 
+        {/* Tagline */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -116,6 +115,7 @@ export function HeroSection() {
           {mockProfile.tagline}
         </motion.p>
 
+        {/* Bio */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -161,6 +161,8 @@ export function HeroSection() {
             <a
               key={label}
               href={href}
+              target={label !== "Email" ? "_blank" : undefined}
+              rel="noopener noreferrer"
               aria-label={label}
               className="w-11 h-11 glass rounded-xl flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 hover:shadow-glow-sm transition-all duration-300"
             >
@@ -176,7 +178,7 @@ export function HeroSection() {
           transition={{ delay: 0.7 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-3xl"
         >
-          {mockStats.map((stat, i) => {
+          {mockStats.map((stat) => {
             const Icon = statIcons[stat.icon];
             return (
               <div key={stat.label} className="glass p-4 rounded-2xl text-center">

@@ -25,7 +25,7 @@ export function Navbar() {
           style={{ background: "var(--gradient-primary)" }}>
           <Code2 className="w-4 h-4 text-white" />
         </div>
-        <span className="gradient-text">Alex.dev</span>
+        <span className="gradient-text">mohid.sec</span>
       </a>
 
       {/* Desktop links */}
