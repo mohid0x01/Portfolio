@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, User, Bell, Shield, Palette, Code,
   Save, Eye, EyeOff, RefreshCw, Check, Key,
-  Moon, Sun, Monitor, Zap, Globe, Lock,
+  Moon, Sun, Zap, Lock,
   ToggleLeft, ToggleRight, ChevronRight, Info
 } from "lucide-react";
+import { useTheme } from "@/lib/theme";
 
 type Section = "profile" | "security" | "notifications" | "appearance" | "advanced";
 
