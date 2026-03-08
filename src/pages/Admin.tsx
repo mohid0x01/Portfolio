@@ -11,8 +11,7 @@ import {
   TrendingUp, Users, Database
 } from "lucide-react";
 import { z } from "zod";
-import { Navigate, useNavigate } from "react-router-dom";
-import { motion as m } from "framer-motion";
+import { Navigate } from "react-router-dom";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { VisitorLogs } from "@/components/admin/VisitorLogs";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
