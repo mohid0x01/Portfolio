@@ -22,6 +22,7 @@ export function AdminSettings() {
   const [section, setSection] = useState<Section>("profile");
   const [saved, setSaved] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   // Profile
   const [profile, setProfile] = useState({ name: "Ghost Admin", email: "admin@chat.com", bio: "Cybersecurity researcher & bug hunter", handle: "gh0st_admin" });
