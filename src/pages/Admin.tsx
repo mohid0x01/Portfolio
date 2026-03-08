@@ -3,12 +3,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Eye, LogOut, Code2, ExternalLink,
+  LayoutDashboard, Eye, LogOut, ExternalLink,
   BarChart3, Terminal, Shield, StickyNote, Wifi,
   Server, FolderLock, Settings, Layers, Github,
   Star, Plus, CheckCircle2, AlertCircle, X, Edit3, Trash2,
   Activity, Zap, Globe, ChevronRight, Menu, Ghost,
-  TrendingUp, Users, Database, Sun, Moon, MapPin
+  TrendingUp, Users, Sun, Moon, MapPin, BookOpen, ScrollText
 } from "lucide-react";
 import { z } from "zod";
 import { Navigate } from "react-router-dom";
@@ -23,6 +23,8 @@ import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 import { AdminFileVault } from "@/components/admin/AdminFileVault";
 import { AdminSettings } from "@/components/admin/AdminSettings";
 import { AdminBugBounty } from "@/components/admin/AdminBugBounty";
+import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
+import { AdminAuditTrail } from "@/components/admin/AdminAuditTrail";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/lib/theme";
@@ -50,6 +52,8 @@ type TabId =
   | "overview"
   | "analytics"
   | "visitors"
+  | "activity"
+  | "audit"
   | "projects"
   | "security"
   | "terminal"
@@ -71,20 +75,22 @@ interface Tab {
 
 const TABS: Tab[] = [
   // Main
-  { id: "overview",   label: "Overview",    icon: LayoutDashboard, group: "main" },
-  { id: "analytics",  label: "Analytics",   icon: BarChart3,       group: "main" },
-  { id: "visitors",   label: "Intel",        icon: Eye,             group: "main", badge: "LIVE", badgeColor: "secondary" },
-  { id: "projects",   label: "Projects",     icon: Layers,          group: "main" },
+  { id: "overview",  label: "Overview",      icon: LayoutDashboard, group: "main" },
+  { id: "analytics", label: "Analytics",     icon: BarChart3,       group: "main" },
+  { id: "visitors",  label: "Intel",          icon: Eye,             group: "main", badge: "LIVE", badgeColor: "secondary" },
+  { id: "activity",  label: "Activity",       icon: Activity,        group: "main", badge: "LIVE", badgeColor: "secondary" },
+  { id: "projects",  label: "Projects",       icon: Layers,          group: "main" },
   // Tools
-  { id: "security",   label: "Security",     icon: Shield,          group: "tools", badge: "8", badgeColor: "destructive" },
-  { id: "terminal",   label: "Terminal",     icon: Terminal,        group: "tools" },
-  { id: "network",    label: "Network",      icon: Wifi,            group: "tools" },
-  { id: "vault",      label: "File Vault",   icon: FolderLock,      group: "tools" },
-  { id: "bugbounty",  label: "Bug Bounty",   icon: Ghost,           group: "tools", badge: "NEW", badgeColor: "primary" },
+  { id: "security",  label: "Security",       icon: Shield,          group: "tools", badge: "LIVE", badgeColor: "destructive" },
+  { id: "audit",     label: "Audit Trail",    icon: BookOpen,        group: "tools", badge: "LIVE", badgeColor: "secondary" },
+  { id: "terminal",  label: "Terminal",       icon: Terminal,        group: "tools" },
+  { id: "network",   label: "Network",        icon: Wifi,            group: "tools" },
+  { id: "vault",     label: "File Vault",     icon: FolderLock,      group: "tools" },
+  { id: "bugbounty", label: "Bug Bounty",     icon: Ghost,           group: "tools" },
   // System
-  { id: "health",     label: "Health",       icon: Server,          group: "system", badge: "●", badgeColor: "secondary" },
-  { id: "notes",      label: "Notes",        icon: StickyNote,      group: "system" },
-  { id: "settings",   label: "Settings",     icon: Settings,        group: "system" },
+  { id: "health",    label: "Health",         icon: Server,          group: "system", badge: "●", badgeColor: "secondary" },
+  { id: "notes",     label: "Notes",          icon: StickyNote,      group: "system" },
+  { id: "settings",  label: "Settings",       icon: Settings,        group: "system" },
 ];
 
 // ── Realtime Activity Feed ────────────────────────────────────────────────────
@@ -178,14 +184,14 @@ function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange:
   }
 
   const quickStats = [
-    { label: "Total Projects", value: projects.length, icon: Layers, color: "text-primary", bg: "bg-primary/10", tab: "projects" as TabId },
-    { label: "Featured Works", value: projects.filter((p) => p.featured).length, icon: Star, color: "text-yellow-400", bg: "bg-yellow-400/10", tab: "projects" as TabId },
-    { label: "Visitor Intel", value: "Live", icon: Eye, color: "text-secondary", bg: "bg-secondary/10", tab: "visitors" as TabId },
-    { label: "Threats Today", value: 8, icon: Shield, color: "text-destructive", bg: "bg-destructive/10", tab: "security" as TabId },
-    { label: "System Health", value: "98%", icon: Server, color: "text-secondary", bg: "bg-secondary/10", tab: "health" as TabId },
-    { label: "Network", value: "Online", icon: Wifi, color: "text-blue-400", bg: "bg-blue-400/10", tab: "network" as TabId },
-    { label: "Open Source", value: projects.filter((p) => p.githubUrl).length, icon: Github, color: "text-muted-foreground", bg: "bg-muted/20", tab: "projects" as TabId },
-    { label: "Analytics", value: "7d", icon: BarChart3, color: "text-primary", bg: "bg-primary/10", tab: "analytics" as TabId },
+    { label: "Total Projects",  value: projects.length,                              icon: Layers,       color: "text-primary",           bg: "bg-primary/10",      tab: "projects"  as TabId },
+    { label: "Featured Works",  value: projects.filter((p) => p.featured).length,    icon: Star,         color: "text-yellow-400",        bg: "bg-yellow-400/10",   tab: "projects"  as TabId },
+    { label: "Visitor Intel",   value: "Live",                                        icon: Eye,          color: "text-secondary",         bg: "bg-secondary/10",    tab: "visitors"  as TabId },
+    { label: "Activity Logs",   value: "Live",                                        icon: Activity,     color: "text-blue-400",          bg: "bg-blue-500/10",     tab: "activity"  as TabId },
+    { label: "Security",        value: "Live",                                        icon: Shield,       color: "text-destructive",       bg: "bg-destructive/10",  tab: "security"  as TabId },
+    { label: "Audit Trail",     value: "Live",                                        icon: BookOpen,     color: "text-secondary",         bg: "bg-secondary/10",    tab: "audit"     as TabId },
+    { label: "System Health",   value: "98%",                                         icon: Server,       color: "text-secondary",         bg: "bg-secondary/10",    tab: "health"    as TabId },
+    { label: "Analytics",       value: "7d",                                          icon: BarChart3,    color: "text-primary",           bg: "bg-primary/10",      tab: "analytics" as TabId },
   ];
 
   return (
@@ -510,6 +516,8 @@ const AdminPage = () => {
       case "overview":   return <Overview projects={mockProjects} onTabChange={setActiveTab} />;
       case "analytics":  return <AdminAnalytics onCountryFilter={handleCountryFilter} />;
       case "visitors":   return <VisitorLogs countryFilter={visitorCountryFilter} />;
+      case "activity":   return <AdminActivityLogs />;
+      case "audit":      return <AdminAuditTrail />;
       case "projects":   return <ProjectsTab />;
       case "security":   return <AdminSecurity />;
       case "terminal":   return <AdminTerminal />;
