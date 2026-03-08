@@ -283,22 +283,48 @@ export function AdminAnalytics({ onCountryFilter }: AdminAnalyticsProps) {
           <h3 className="font-bold text-sm flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
             Visitor World Map
+            {selectedCountry && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-bold">
+                Filtering: {countryData.find((c) => c.code === selectedCountry)?.name ?? selectedCountry}
+              </span>
+            )}
           </h3>
-          <span className="text-xs text-muted-foreground">{countryData.length} countries</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{countryData.length} countries</span>
+            {selectedCountry && onCountryFilter && (
+              <button
+                onClick={() => { setSelectedCountry(null); onCountryFilter(null); }}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors glass px-2 py-1 rounded-lg border border-border/20"
+              >
+                ✕ Clear filter
+              </button>
+            )}
+          </div>
         </div>
         {countryData.length === 0 ? (
           <div className="h-48 flex items-center justify-center text-muted-foreground text-xs">No geo data yet</div>
         ) : (
-          <WorldMap data={countryData} />
+          <WorldMap
+            data={countryData}
+            selectedCountry={selectedCountry}
+            onCountryClick={(code) => {
+              setSelectedCountry(code);
+              onCountryFilter?.(code);
+            }}
+          />
         )}
         {countryData.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {countryData.slice(0, 8).map((c, i) => (
-              <div key={c.code} className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
-                <span className="text-muted-foreground">{c.name}</span>
+              <button
+                key={c.code}
+                onClick={() => { const next = selectedCountry === c.code ? null : c.code; setSelectedCountry(next); onCountryFilter?.(next); }}
+                className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border transition-all ${selectedCountry === c.code ? "bg-primary/20 border-primary/40 text-primary" : "border-border/20 text-muted-foreground hover:text-foreground hover:border-border/40"}`}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
+                <span>{c.name}</span>
                 <span className="font-mono font-bold">{c.value}</span>
-              </div>
+              </button>
             ))}
           </div>
         )}
