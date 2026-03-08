@@ -3,12 +3,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Eye, LogOut, Code2, ExternalLink,
+  LayoutDashboard, Eye, LogOut, ExternalLink,
   BarChart3, Terminal, Shield, StickyNote, Wifi,
   Server, FolderLock, Settings, Layers, Github,
   Star, Plus, CheckCircle2, AlertCircle, X, Edit3, Trash2,
   Activity, Zap, Globe, ChevronRight, Menu, Ghost,
-  TrendingUp, Users, Database, Sun, Moon, MapPin
+  TrendingUp, Users, Sun, Moon, MapPin, BookOpen, ScrollText
 } from "lucide-react";
 import { z } from "zod";
 import { Navigate } from "react-router-dom";
@@ -23,6 +23,8 @@ import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 import { AdminFileVault } from "@/components/admin/AdminFileVault";
 import { AdminSettings } from "@/components/admin/AdminSettings";
 import { AdminBugBounty } from "@/components/admin/AdminBugBounty";
+import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
+import { AdminAuditTrail } from "@/components/admin/AdminAuditTrail";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/lib/theme";
