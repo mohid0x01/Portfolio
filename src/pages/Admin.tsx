@@ -164,10 +164,18 @@ const AdminPage = () => {
         {/* Mobile header */}
         <div className="md:hidden flex items-center justify-between mb-6">
           <span className="font-black gradient-text text-lg">Admin Panel</span>
-          <button onClick={signOut} className="glass p-2 rounded-xl text-muted-foreground hover:text-destructive transition-colors">
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setActiveTab("projects")} className={`glass p-2 rounded-xl transition-colors ${activeTab === "projects" ? "text-primary" : "text-muted-foreground"}`}><LayoutDashboard className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab("visitors")}  className={`glass p-2 rounded-xl transition-colors ${activeTab === "visitors"  ? "text-secondary" : "text-muted-foreground"}`}><Eye className="w-4 h-4" /></button>
+            <button onClick={signOut} className="glass p-2 rounded-xl text-muted-foreground hover:text-destructive transition-colors"><LogOut className="w-4 h-4" /></button>
+          </div>
         </div>
+
+        {/* ── Visitor Logs Tab ─────────────────────────── */}
+        {activeTab === "visitors" && <VisitorLogs />}
+
+        {/* ── Projects Tab ─────────────────────────────── */}
+        {activeTab === "projects" && (<>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
