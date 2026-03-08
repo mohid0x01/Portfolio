@@ -1,421 +1,631 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plus, LogOut, Trash2, Edit3, CheckCircle2, AlertCircle,
-  Layers, Github, ExternalLink, Star, LayoutDashboard, Code2, X, Eye
+  LayoutDashboard, Eye, LogOut, Code2, ExternalLink,
+  BarChart3, Terminal, Shield, StickyNote, Wifi,
+  Server, FolderLock, Settings, Layers, Github,
+  Star, Plus, CheckCircle2, AlertCircle, X, Edit3, Trash2,
+  Activity, Zap, Globe, ChevronRight, Menu, Ghost,
+  TrendingUp, Users, Database
 } from "lucide-react";
-import { VisitorLogs } from "@/components/admin/VisitorLogs";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { z } from "zod";
-import type { Project } from "@/lib/schemas";
-import { mockProjects } from "@/lib/mockData";
-import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { VisitorLogs } from "@/components/admin/VisitorLogs";
+import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
+import { AdminTerminal } from "@/components/admin/AdminTerminal";
+import { AdminSecurity } from "@/components/admin/AdminSecurity";
+import { AdminNotes } from "@/components/admin/AdminNotes";
+import { AdminNetworkMonitor } from "@/components/admin/AdminNetworkMonitor";
+import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
+import { AdminFileVault } from "@/components/admin/AdminFileVault";
+import { AdminSettings } from "@/components/admin/AdminSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { mockProjects } from "@/lib/mockData";
+import type { Project } from "@/lib/schemas";
 import { addDocument, deleteDocument } from "@/lib/firebase";
 
-// Admin form uses raw string for techStack — transformed on submit
+// ── Form Schema ───────────────────────────────────────────────────────────────
 const adminProjectSchema = z.object({
-  title: z.string().trim().min(2, "Title must be at least 2 characters").max(80),
-  description: z.string().trim().min(10, "Description must be at least 10 characters").max(500),
-  techStack: z.string().trim().min(1, "Add at least one technology"),
-  githubUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  liveDemoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  title: z.string().trim().min(2).max(80),
+  description: z.string().trim().min(10).max(500),
+  techStack: z.string().trim().min(1),
+  githubUrl: z.string().url().optional().or(z.literal("")),
+  liveDemoUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z.string().url().optional().or(z.literal("")),
   featured: z.boolean().default(false),
   order: z.number().default(0),
 });
-
 type AdminFormData = z.infer<typeof adminProjectSchema>;
 
-const AdminPage = () => {
-  const { user, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState<"projects" | "visitors">("projects");
+// ── Tab config ────────────────────────────────────────────────────────────────
+type TabId =
+  | "overview"
+  | "analytics"
+  | "visitors"
+  | "projects"
+  | "security"
+  | "terminal"
+  | "network"
+  | "health"
+  | "vault"
+  | "notes"
+  | "settings";
+
+interface Tab {
+  id: TabId;
+  label: string;
+  icon: React.ElementType;
+  badge?: string;
+  badgeColor?: string;
+  group: "main" | "tools" | "system";
+}
+
+const TABS: Tab[] = [
+  // Main
+  { id: "overview",  label: "Overview",   icon: LayoutDashboard, group: "main" },
+  { id: "analytics", label: "Analytics",  icon: BarChart3,       group: "main" },
+  { id: "visitors",  label: "Intel",       icon: Eye,             group: "main", badge: "LIVE", badgeColor: "secondary" },
+  { id: "projects",  label: "Projects",    icon: Layers,          group: "main" },
+  // Tools
+  { id: "security",  label: "Security",    icon: Shield,          group: "tools", badge: "8", badgeColor: "destructive" },
+  { id: "terminal",  label: "Terminal",    icon: Terminal,        group: "tools" },
+  { id: "network",   label: "Network",     icon: Wifi,            group: "tools" },
+  { id: "vault",     label: "File Vault",  icon: FolderLock,      group: "tools" },
+  // System
+  { id: "health",    label: "Health",      icon: Server,          group: "system", badge: "●", badgeColor: "secondary" },
+  { id: "notes",     label: "Notes",       icon: StickyNote,      group: "system" },
+  { id: "settings",  label: "Settings",    icon: Settings,        group: "system" },
+];
+
+// ── Overview quick-stats ──────────────────────────────────────────────────────
+function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange: (t: TabId) => void }) {
+  const quickStats = [
+    { label: "Total Projects", value: projects.length, icon: Layers, color: "text-primary", bg: "bg-primary/10", tab: "projects" as TabId },
+    { label: "Featured Works", value: projects.filter((p) => p.featured).length, icon: Star, color: "text-yellow-400", bg: "bg-yellow-400/10", tab: "projects" as TabId },
+    { label: "Visitor Intel", value: "Live", icon: Eye, color: "text-secondary", bg: "bg-secondary/10", tab: "visitors" as TabId },
+    { label: "Threats Today", value: 8, icon: Shield, color: "text-destructive", bg: "bg-destructive/10", tab: "security" as TabId },
+    { label: "System Health", value: "98%", icon: Server, color: "text-secondary", bg: "bg-secondary/10", tab: "health" as TabId },
+    { label: "Network", value: "Online", icon: Wifi, color: "text-blue-400", bg: "bg-blue-400/10", tab: "network" as TabId },
+    { label: "Open Source", value: projects.filter((p) => p.githubUrl).length, icon: Github, color: "text-muted-foreground", bg: "bg-muted/20", tab: "projects" as TabId },
+    { label: "Analytics", value: "7d", icon: BarChart3, color: "text-primary", bg: "bg-primary/10", tab: "analytics" as TabId },
+  ];
+
+  const recentActivity = [
+    { msg: "New visitor from 🇧🇷 São Paulo, Brazil", time: "2m ago", type: "visitor" },
+    { msg: "SQLi attempt blocked — 45.33.32.156", time: "5m ago", type: "threat" },
+    { msg: "Ghost Chat — new message in #general", time: "12m ago", type: "chat" },
+    { msg: "System health check passed (98/100)", time: "30m ago", type: "system" },
+    { msg: "New visitor from 🇩🇪 Berlin, Germany", time: "45m ago", type: "visitor" },
+    { msg: "Brute force blocked — 192.168.1.55", time: "1h ago", type: "threat" },
+    { msg: "Edge function deployed successfully", time: "2h ago", type: "system" },
+    { msg: "Daily analytics report generated", time: "9h ago", type: "system" },
+  ];
+
+  const activityColor: Record<string, string> = {
+    visitor: "text-primary",
+    threat: "text-destructive",
+    chat: "text-secondary",
+    system: "text-blue-400",
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-black gradient-text">Command Center</h2>
+        <p className="text-sm text-muted-foreground mt-1">Your ghost operations at a glance</p>
+      </div>
+
+      {/* Quick stats grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {quickStats.map(({ label, value, icon: Icon, color, bg, tab }, i) => (
+          <motion.button
+            key={label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            onClick={() => onTabChange(tab)}
+            className="glass rounded-2xl p-4 text-left border border-border/20 hover:border-primary/30 transition-all group hover:scale-[1.02]"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center`}>
+                <Icon className={`w-4 h-4 ${color}`} />
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <div className="text-2xl font-black mb-0.5">{value}</div>
+            <div className="text-xs text-muted-foreground">{label}</div>
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Bottom grid */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Recent activity */}
+        <div className="glass rounded-2xl p-5 border border-border/20">
+          <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" />
+            Recent Activity
+          </h3>
+          <div className="space-y-2">
+            {recentActivity.map((a, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + i * 0.05 }}
+                className="flex items-start gap-2.5 py-1.5"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                  a.type === "visitor" ? "bg-primary" :
+                  a.type === "threat" ? "bg-destructive" :
+                  a.type === "chat" ? "bg-secondary" :
+                  "bg-blue-400"
+                }`} />
+                <span className="text-xs text-foreground/80 flex-1">{a.msg}</span>
+                <span className="text-[10px] text-muted-foreground/50 flex-shrink-0 font-mono">{a.time}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Module launcher */}
+        <div className="glass rounded-2xl p-5 border border-border/20">
+          <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-secondary" />
+            Quick Launch
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            {TABS.filter((t) => t.id !== "overview").map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className="glass rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-primary/10 hover:border-primary/20 border border-border/20 transition-all group"
+                >
+                  <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* System status strip */}
+      <div className="glass rounded-2xl p-4 border border-secondary/20" style={{ background: "hsl(162 72% 46% / 0.03)" }}>
+        <div className="flex items-center gap-6 text-xs font-mono flex-wrap gap-y-2">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+            <span className="text-secondary font-bold">ALL SYSTEMS OPERATIONAL</span>
+          </div>
+          {["Web Server", "Database", "Auth", "CDN", "Ghost Chat"].map((s) => (
+            <div key={s} className="flex items-center gap-1 text-muted-foreground">
+              <CheckCircle2 className="w-3 h-3 text-secondary" />
+              {s}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Projects Tab ──────────────────────────────────────────────────────────────
+function ProjectsTab() {
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Project | null>(null);
   const [submitState, setSubmitState] = useState<"idle" | "success" | "error">("idle");
   const [submitMsg, setSubmitMsg] = useState("");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<AdminFormData>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<AdminFormData>({
     resolver: zodResolver(adminProjectSchema),
   });
 
-  if (!user) return <Navigate to="/login" replace />;
-
   const onSubmit = async (data: AdminFormData) => {
-    setSubmitState("idle");
     try {
-      // Try Firestore first
-      const techArray = Array.isArray(data.techStack)
-        ? data.techStack
-        : (data.techStack as unknown as string).split(",").map((s) => s.trim()).filter(Boolean);
-
+      const techArray = (data.techStack as unknown as string).split(",").map((s) => s.trim()).filter(Boolean);
       const newProject: Project = {
-        ...data,
-        id: editTarget?.id || Date.now().toString(),
-        techStack: techArray,
-        featured: data.featured ?? false,
-        order: data.order ?? projects.length,
+        ...data, id: editTarget?.id || Date.now().toString(), techStack: techArray,
+        featured: data.featured ?? false, order: data.order ?? projects.length,
         createdAt: new Date().toISOString(),
       };
-
-      try {
-        await addDocument("projects", newProject);
-      } catch {
-        // Firebase not configured — use local state only
-      }
-
-      if (editTarget) {
-        setProjects((prev) => prev.map((p) => (p.id === editTarget.id ? newProject : p)));
-      } else {
-        setProjects((prev) => [newProject, ...prev]);
-      }
-
+      try { await addDocument("projects", newProject); } catch {}
+      if (editTarget) setProjects((prev) => prev.map((p) => p.id === editTarget.id ? newProject : p));
+      else setProjects((prev) => [newProject, ...prev]);
       setSubmitState("success");
-      setSubmitMsg(editTarget ? "Project updated!" : "Project added successfully!");
-      reset();
-      setShowForm(false);
-      setEditTarget(null);
+      setSubmitMsg(editTarget ? "Project updated!" : "Project added!");
+      reset(); setShowForm(false); setEditTarget(null);
       setTimeout(() => setSubmitState("idle"), 3000);
     } catch (e: unknown) {
       setSubmitState("error");
-      setSubmitMsg(e instanceof Error ? e.message : "Something went wrong.");
+      setSubmitMsg(e instanceof Error ? e.message : "Something went wrong");
     }
   };
 
   const handleDelete = async (id: string) => {
-    setDeletingId(id);
-    try {
-      await deleteDocument("projects", id);
-    } catch {}
+    try { await deleteDocument("projects", id); } catch {}
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    setDeletingId(null);
   };
 
   const openEdit = (project: Project) => {
     setEditTarget(project);
-    reset({
-      ...project,
-      techStack: project.techStack.join(", "),
-    } as AdminFormData);
+    reset({ ...project, techStack: project.techStack.join(", ") } as AdminFormData);
     setShowForm(true);
   };
 
+  const INPUT = "w-full px-4 py-3 rounded-xl glass text-sm border border-border/20 focus:border-primary/40 focus:outline-none transition-colors placeholder:text-muted-foreground";
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-60 glass border-r border-border flex flex-col z-40 hidden md:flex">
-        {/* Logo */}
-        <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "var(--gradient-primary)" }}>
-              <Code2 className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-black gradient-text">Admin Panel</span>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-black gradient-text">Projects</h2>
+          <p className="text-xs text-muted-foreground mt-1">Manage your portfolio projects</p>
+        </div>
+        <button
+          onClick={() => { setEditTarget(null); reset({}); setShowForm(true); }}
+          className="btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+        >
+          <Plus className="w-4 h-4" />Add Project
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: "Total", value: projects.length, color: "text-primary" },
+          { label: "Featured", value: projects.filter((p) => p.featured).length, color: "text-yellow-400" },
+          { label: "Live Demo", value: projects.filter((p) => p.liveDemoUrl).length, color: "text-secondary" },
+          { label: "Open Source", value: projects.filter((p) => p.githubUrl).length, color: "text-blue-400" },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="glass rounded-xl p-3 border border-border/20 text-center">
+            <div className={`text-2xl font-black ${color}`}>{value}</div>
+            <div className="text-xs text-muted-foreground">{label}</div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 truncate">{user.email}</p>
-        </div>
+        ))}
+      </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-4 space-y-1">
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === "projects" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab("visitors")}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === "visitors" ? "bg-secondary/10 text-secondary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-          >
-            <Eye className="w-4 h-4" />
-            Visitor Logs
-          </button>
-          <a href="/" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
-            <ExternalLink className="w-4 h-4" />
-            View Portfolio
-          </a>
-        </nav>
+      {/* Feedback */}
+      <AnimatePresence>
+        {submitState !== "idle" && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className={`flex items-center gap-3 p-4 rounded-xl border ${
+              submitState === "success" ? "bg-secondary/10 border-secondary/30 text-secondary" : "bg-destructive/10 border-destructive/30 text-destructive"
+            }`}>
+            {submitState === "success" ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {submitMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Sign out */}
-        <div className="p-4 border-t border-border">
-          <button
-            onClick={signOut}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="md:ml-60 p-6 lg:p-10">
-        {/* Mobile header */}
-        <div className="md:hidden flex items-center justify-between mb-6">
-          <span className="font-black gradient-text text-lg">Admin Panel</span>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setActiveTab("projects")} className={`glass p-2 rounded-xl transition-colors ${activeTab === "projects" ? "text-primary" : "text-muted-foreground"}`}><LayoutDashboard className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab("visitors")}  className={`glass p-2 rounded-xl transition-colors ${activeTab === "visitors"  ? "text-secondary" : "text-muted-foreground"}`}><Eye className="w-4 h-4" /></button>
-            <button onClick={signOut} className="glass p-2 rounded-xl text-muted-foreground hover:text-destructive transition-colors"><LogOut className="w-4 h-4" /></button>
-          </div>
-        </div>
-
-        {/* ── Visitor Logs Tab ─────────────────────────── */}
-        {activeTab === "visitors" && <VisitorLogs />}
-
-        {/* ── Projects Tab ─────────────────────────────── */}
-        {activeTab === "projects" && (<>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Total Projects", value: projects.length, icon: Layers, accent: "text-primary" },
-            { label: "Featured", value: projects.filter((p) => p.featured).length, icon: Star, accent: "text-secondary" },
-            { label: "With Live Demo", value: projects.filter((p) => p.liveDemoUrl).length, icon: ExternalLink, accent: "text-blue-400" },
-            { label: "Open Source", value: projects.filter((p) => p.githubUrl).length, icon: Github, accent: "text-muted-foreground" },
-          ].map(({ label, value, icon: Icon, accent }) => (
-            <GlassCard key={label} className="p-4" hover={false}>
-              <Icon className={`w-5 h-5 mb-2 ${accent}`} />
-              <div className="text-2xl font-black">{value}</div>
-              <div className="text-xs text-muted-foreground">{label}</div>
-            </GlassCard>
-          ))}
-        </div>
-
-        {/* Toast feedback */}
-        <AnimatePresence>
-          {submitState !== "idle" && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${
-                submitState === "success"
-                  ? "bg-secondary/10 border-secondary/30 text-secondary"
-                  : "bg-destructive/10 border-destructive/30 text-destructive"
-              }`}
-            >
-              {submitState === "success" ? (
-                <CheckCircle2 className="w-5 h-5 shrink-0" />
-              ) : (
-                <AlertCircle className="w-5 h-5 shrink-0" />
-              )}
-              {submitMsg}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Projects header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black">Projects</h1>
-          <button
-            onClick={() => { setEditTarget(null); reset({}); setShowForm(true); }}
-            className="btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-          >
-            <Plus className="w-4 h-4" />
-            Add Project
-          </button>
-        </div>
-
-        {/* Add/Edit form */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden mb-8"
-            >
-              <GlassCard className="p-6" glow="primary" hover={false}>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-bold text-lg">
-                    {editTarget ? "Edit Project" : "New Project"}
-                  </h2>
-                  <button onClick={() => { setShowForm(false); setEditTarget(null); reset(); }}
-                    className="text-muted-foreground hover:text-foreground transition-colors">
-                    <X className="w-5 h-5" />
+      {/* Form */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <GlassCard className="p-6" glow="primary" hover={false}>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold">{editTarget ? "Edit Project" : "New Project"}</h3>
+                <button onClick={() => { setShowForm(false); setEditTarget(null); reset(); }} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Title *</label>
+                    <input {...register("title")} placeholder="Project name" className={INPUT} />
+                    {errors.title && <p className="text-destructive text-xs mt-1">{errors.title.message}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1.5">Tech Stack * (comma-separated)</label>
+                    <input {...register("techStack" as "techStack")} placeholder="React, TypeScript, Tailwind" className={INPUT} />
+                    {errors.techStack && <p className="text-destructive text-xs mt-1">{errors.techStack.message}</p>}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">Description *</label>
+                  <textarea {...register("description")} rows={3} placeholder="Describe this project..." className={`${INPUT} resize-none`} />
+                  {errors.description && <p className="text-destructive text-xs mt-1">{errors.description.message}</p>}
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {[
+                    { field: "githubUrl" as const, label: "GitHub URL", placeholder: "https://github.com/..." },
+                    { field: "liveDemoUrl" as const, label: "Live Demo URL", placeholder: "https://demo.com" },
+                    { field: "imageUrl" as const, label: "Image URL", placeholder: "https://img.com/..." },
+                  ].map(({ field, label, placeholder }) => (
+                    <div key={field}>
+                      <label className="block text-xs text-muted-foreground mb-1.5">{label}</label>
+                      <input {...register(field)} placeholder={placeholder} className={INPUT} />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" {...register("featured")} className="w-4 h-4 accent-primary rounded" />
+                    Mark as Featured
+                  </label>
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="submit" disabled={isSubmitting} className="btn-glow flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white disabled:opacity-60">
+                    {isSubmitting ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    {isSubmitting ? "Saving..." : editTarget ? "Save Changes" : "Add Project"}
+                  </button>
+                  <button type="button" onClick={() => { setShowForm(false); reset(); }} className="glass px-5 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Cancel
                   </button>
                 </div>
+              </form>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Title *</label>
-                      <input {...register("title")}
-                        placeholder="Project name"
-                        className="w-full px-4 py-3 rounded-xl glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors text-sm"
-                      />
-                      {errors.title && <p className="text-destructive text-xs mt-1">{errors.title.message}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Tech Stack * <span className="text-muted-foreground font-normal">(comma-separated)</span></label>
-                      <input {...register("techStack" as "techStack")}
-                        placeholder="React, TypeScript, Tailwind CSS"
-                        className="w-full px-4 py-3 rounded-xl glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors text-sm"
-                      />
-                      {errors.techStack && <p className="text-destructive text-xs mt-1">{errors.techStack.message}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Description *</label>
-                    <textarea {...register("description")}
-                      rows={3}
-                      placeholder="What does this project do? What problems does it solve?"
-                      className="w-full px-4 py-3 rounded-xl glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors text-sm resize-none"
-                    />
-                    {errors.description && <p className="text-destructive text-xs mt-1">{errors.description.message}</p>}
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">GitHub URL</label>
-                      <input {...register("githubUrl")}
-                        placeholder="https://github.com/..."
-                        className="w-full px-4 py-3 rounded-xl glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors text-sm"
-                      />
-                      {errors.githubUrl && <p className="text-destructive text-xs mt-1">{errors.githubUrl.message}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Live Demo URL</label>
-                      <input {...register("liveDemoUrl")}
-                        placeholder="https://project.demo"
-                        className="w-full px-4 py-3 rounded-xl glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors text-sm"
-                      />
-                      {errors.liveDemoUrl && <p className="text-destructive text-xs mt-1">{errors.liveDemoUrl.message}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Image URL</label>
-                      <input {...register("imageUrl")}
-                        placeholder="https://img.example.com/..."
-                        className="w-full px-4 py-3 rounded-xl glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors text-sm"
-                      />
-                      {errors.imageUrl && <p className="text-destructive text-xs mt-1">{errors.imageUrl.message}</p>}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" {...register("featured")}
-                        className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Mark as Featured</span>
-                    </label>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <button type="submit" disabled={isSubmitting}
-                      className="btn-glow flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white disabled:opacity-60">
-                      {isSubmitting ? (
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4" />
-                      )}
-                      {isSubmitting ? "Saving..." : editTarget ? "Save Changes" : "Add Project"}
-                    </button>
-                    <button type="button"
-                      onClick={() => { setShowForm(false); setEditTarget(null); reset(); }}
-                      className="glass px-6 py-3 rounded-xl font-medium text-muted-foreground hover:text-foreground transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </GlassCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Projects table */}
-        <div className="space-y-3">
-          {projects.map((project, i) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ delay: i * 0.04 }}
-            >
-              <GlassCard className="p-4 flex items-center gap-4" hover={false} glow="none">
-                {/* Color indicator */}
-                <div className="w-2 h-2 rounded-full shrink-0"
-                  style={{ background: project.featured ? "hsl(var(--secondary))" : "hsl(var(--muted-foreground))" }} />
-
-                {/* Info */}
+      {/* Projects list */}
+      <div className="space-y-2">
+        {projects.map((project, i) => (
+          <motion.div key={project.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+            <GlassCard className="p-4" hover={false} glow="none">
+              <div className="flex items-center gap-4">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: project.featured ? "hsl(var(--secondary))" : "hsl(var(--muted-foreground))" }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-sm truncate">{project.title}</h3>
-                    {project.featured && (
-                      <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/20">
-                        Featured
-                      </span>
-                    )}
+                    {project.featured && <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/20">Featured</span>}
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {project.techStack.slice(0, 4).map((t) => (
-                      <span key={t} className="text-xs text-muted-foreground font-mono">{t}{" "}</span>
+                      <span key={t} className="text-xs text-muted-foreground font-mono">{t}</span>
                     ))}
-                    {project.techStack.length > 4 && (
-                      <span className="text-xs text-muted-foreground">+{project.techStack.length - 4} more</span>
-                    )}
+                    {project.techStack.length > 4 && <span className="text-xs text-muted-foreground">+{project.techStack.length - 4}</span>}
                   </div>
                 </div>
-
-                {/* Links */}
-                <div className="hidden md:flex items-center gap-2 shrink-0">
-                  {project.githubUrl && (
-                    <a href={project.githubUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary transition-colors">
-                      <Github className="w-4 h-4" />
-                    </a>
-                  )}
-                  {project.liveDemoUrl && (
-                    <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-secondary transition-colors">
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  )}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {project.githubUrl && <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"><Github className="w-3.5 h-3.5" /></a>}
+                  {project.liveDemoUrl && <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg text-muted-foreground hover:text-secondary transition-colors"><ExternalLink className="w-3.5 h-3.5" /></a>}
+                  <button onClick={() => openEdit(project)} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary transition-colors"><Edit3 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => handleDelete(project.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button onClick={() => openEdit(project)}
-                    className="w-8 h-8 glass rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all">
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(project.id)}
-                    disabled={deletingId === project.id}
-                    className="w-8 h-8 glass rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-all disabled:opacity-40"
-                  >
-                    {deletingId === project.id ? (
-                      <span className="w-3.5 h-3.5 border border-destructive/50 border-t-destructive rounded-full animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </div>
+// ── Main Admin Page ───────────────────────────────────────────────────────────
+const AdminPage = () => {
+  const { user, signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-        {projects.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <Layers className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>No projects yet. Add your first one!</p>
+  if (!user) return <Navigate to="/login" replace />;
+
+  const currentTab = TABS.find((t) => t.id === activeTab)!;
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "overview":  return <Overview projects={mockProjects} onTabChange={setActiveTab} />;
+      case "analytics": return <AdminAnalytics />;
+      case "visitors":  return <VisitorLogs />;
+      case "projects":  return <ProjectsTab />;
+      case "security":  return <AdminSecurity />;
+      case "terminal":  return <AdminTerminal />;
+      case "network":   return <AdminNetworkMonitor />;
+      case "vault":     return <AdminFileVault />;
+      case "health":    return <AdminSystemHealth />;
+      case "notes":     return <AdminNotes />;
+      case "settings":  return <AdminSettings />;
+      default:          return null;
+    }
+  };
+
+  const GROUP_LABELS: Record<Tab["group"], string> = { main: "Main", tools: "Security Tools", system: "System" };
+  const groupedTabs = TABS.reduce((acc, tab) => {
+    if (!acc[tab.group]) acc[tab.group] = [];
+    acc[tab.group].push(tab);
+    return acc;
+  }, {} as Record<Tab["group"], Tab[]>);
+
+  const SidebarContent = () => (
+    <>
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-border/20 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--gradient-primary)" }}>
+            <Ghost className="w-5 h-5 text-white" />
           </div>
+          <div>
+            <span className="font-black gradient-text text-sm">Ghost Panel</span>
+            <p className="text-[10px] text-muted-foreground truncate max-w-32">{user.email}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav groups */}
+      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto scrollbar-thin">
+        {(["main", "tools", "system"] as const).map((group) => (
+          <div key={group}>
+            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest px-3 mb-1">
+              {GROUP_LABELS[group]}
+            </p>
+            <div className="space-y-0.5">
+              {groupedTabs[group]?.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
+                      isActive
+                        ? "bg-primary/15 text-primary border border-primary/20"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-primary" : "group-hover:text-foreground"}`} />
+                    <span className="flex-1 text-left">{tab.label}</span>
+                    {tab.badge && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                        tab.badgeColor === "destructive" ? "bg-destructive/20 text-destructive" :
+                        tab.badgeColor === "secondary" ? "bg-secondary/20 text-secondary" :
+                        "bg-primary/20 text-primary"
+                      }`}>
+                        {tab.badge}
+                      </span>
+                    )}
+                    {isActive && <ChevronRight className="w-3 h-3 opacity-50" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="px-3 py-3 border-t border-border/20 space-y-1 flex-shrink-0">
+        <a href="/"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-all"
+        >
+          <ExternalLink className="w-4 h-4" />
+          View Portfolio
+        </a>
+        <button
+          onClick={signOut}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+        >
+          <LogOut className="w-4 h-4" />Sign Out
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex">
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden md:flex flex-col w-60 fixed top-0 left-0 bottom-0 z-40 border-r border-border/20 flex-shrink-0"
+        style={{ background: "hsl(0 0% 4%)" }}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile sidebar overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 z-40 md:hidden"
+            />
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed left-0 top-0 bottom-0 w-64 z-50 flex flex-col border-r border-border/20 md:hidden"
+              style={{ background: "hsl(0 0% 4%)" }}
+            >
+              <SidebarContent />
+            </motion.aside>
+          </>
         )}
-        </>)}
+      </AnimatePresence>
+
+      {/* Main content */}
+      <div className="flex-1 md:ml-60 flex flex-col min-h-screen">
+        {/* Top bar */}
+        <header
+          className="sticky top-0 z-30 px-4 md:px-6 py-3 border-b border-border/20 flex items-center gap-3 flex-shrink-0"
+          style={{ background: "hsl(0 0% 4% / 0.95)", backdropFilter: "blur(12px)" }}
+        >
+          {/* Mobile menu */}
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden glass p-2 rounded-xl text-muted-foreground hover:text-foreground transition-colors">
+            <Menu className="w-4 h-4" />
+          </button>
+
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
+            <Ghost className="w-4 h-4 text-primary flex-shrink-0" />
+            <ChevronRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            <span className="font-bold truncate">{currentTab.label}</span>
+            {currentTab.badge && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 ${
+                currentTab.badgeColor === "destructive" ? "bg-destructive/20 text-destructive" :
+                currentTab.badgeColor === "secondary" ? "bg-secondary/20 text-secondary animate-pulse" :
+                "bg-primary/20 text-primary"
+              }`}>
+                {currentTab.badge}
+              </span>
+            )}
+          </div>
+
+          {/* Right side controls */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Status pill */}
+            <div className="hidden sm:flex items-center gap-1.5 glass px-3 py-1.5 rounded-xl text-xs">
+              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+              <span className="text-secondary font-mono font-bold">ONLINE</span>
+            </div>
+            {/* Tab quick-switcher pills */}
+            <div className="hidden lg:flex items-center gap-1">
+              {TABS.slice(0, 4).map((t) => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id)}
+                    className={`p-2 rounded-lg transition-colors ${activeTab === t.id ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"}`}
+                    title={t.label}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+
+        {/* Footer status bar */}
+        <footer
+          className="px-6 py-2 border-t border-border/15 flex items-center gap-4 text-[10px] font-mono text-muted-foreground flex-shrink-0"
+          style={{ background: "hsl(0 0% 3%)" }}
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+            <span className="text-secondary">GHOST PANEL v3.0</span>
+          </span>
+          <span className="text-muted-foreground/40">•</span>
+          <span>{user.email}</span>
+          <span className="text-muted-foreground/40">•</span>
+          <span>{new Date().toLocaleString()}</span>
+          <span className="ml-auto">{activeTab.toUpperCase()}</span>
+        </footer>
       </div>
     </div>
   );
