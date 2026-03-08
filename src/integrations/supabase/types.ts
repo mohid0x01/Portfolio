@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      bug_reports: {
+        Row: {
+          actual_behavior: string | null
+          affected_url: string | null
+          assigned_to: string | null
+          bounty_amount: number | null
+          category: string
+          created_at: string
+          cvss_score: number | null
+          description: string
+          expected_behavior: string | null
+          id: string
+          notes: string | null
+          proof_of_concept: string | null
+          reporter_contact: string | null
+          reporter_name: string | null
+          severity: string
+          status: string
+          steps_to_reproduce: string | null
+          submitted_by: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_behavior?: string | null
+          affected_url?: string | null
+          assigned_to?: string | null
+          bounty_amount?: number | null
+          category?: string
+          created_at?: string
+          cvss_score?: number | null
+          description: string
+          expected_behavior?: string | null
+          id?: string
+          notes?: string | null
+          proof_of_concept?: string | null
+          reporter_contact?: string | null
+          reporter_name?: string | null
+          severity?: string
+          status?: string
+          steps_to_reproduce?: string | null
+          submitted_by?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_behavior?: string | null
+          affected_url?: string | null
+          assigned_to?: string | null
+          bounty_amount?: number | null
+          category?: string
+          created_at?: string
+          cvss_score?: number | null
+          description?: string
+          expected_behavior?: string | null
+          id?: string
+          notes?: string | null
+          proof_of_concept?: string | null
+          reporter_contact?: string | null
+          reporter_name?: string | null
+          severity?: string
+          status?: string
+          steps_to_reproduce?: string | null
+          submitted_by?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ghost_members: {
         Row: {
           avatar_color: string

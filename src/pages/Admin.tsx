@@ -22,6 +22,7 @@ import { AdminNetworkMonitor } from "@/components/admin/AdminNetworkMonitor";
 import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 import { AdminFileVault } from "@/components/admin/AdminFileVault";
 import { AdminSettings } from "@/components/admin/AdminSettings";
+import { AdminBugBounty } from "@/components/admin/AdminBugBounty";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/lib/theme";
@@ -56,6 +57,7 @@ type TabId =
   | "health"
   | "vault"
   | "notes"
+  | "bugbounty"
   | "settings";
 
 interface Tab {
@@ -69,19 +71,20 @@ interface Tab {
 
 const TABS: Tab[] = [
   // Main
-  { id: "overview",  label: "Overview",   icon: LayoutDashboard, group: "main" },
-  { id: "analytics", label: "Analytics",  icon: BarChart3,       group: "main" },
-  { id: "visitors",  label: "Intel",       icon: Eye,             group: "main", badge: "LIVE", badgeColor: "secondary" },
-  { id: "projects",  label: "Projects",    icon: Layers,          group: "main" },
+  { id: "overview",   label: "Overview",    icon: LayoutDashboard, group: "main" },
+  { id: "analytics",  label: "Analytics",   icon: BarChart3,       group: "main" },
+  { id: "visitors",   label: "Intel",        icon: Eye,             group: "main", badge: "LIVE", badgeColor: "secondary" },
+  { id: "projects",   label: "Projects",     icon: Layers,          group: "main" },
   // Tools
-  { id: "security",  label: "Security",    icon: Shield,          group: "tools", badge: "8", badgeColor: "destructive" },
-  { id: "terminal",  label: "Terminal",    icon: Terminal,        group: "tools" },
-  { id: "network",   label: "Network",     icon: Wifi,            group: "tools" },
-  { id: "vault",     label: "File Vault",  icon: FolderLock,      group: "tools" },
+  { id: "security",   label: "Security",     icon: Shield,          group: "tools", badge: "8", badgeColor: "destructive" },
+  { id: "terminal",   label: "Terminal",     icon: Terminal,        group: "tools" },
+  { id: "network",    label: "Network",      icon: Wifi,            group: "tools" },
+  { id: "vault",      label: "File Vault",   icon: FolderLock,      group: "tools" },
+  { id: "bugbounty",  label: "Bug Bounty",   icon: Ghost,           group: "tools", badge: "NEW", badgeColor: "primary" },
   // System
-  { id: "health",    label: "Health",      icon: Server,          group: "system", badge: "●", badgeColor: "secondary" },
-  { id: "notes",     label: "Notes",       icon: StickyNote,      group: "system" },
-  { id: "settings",  label: "Settings",    icon: Settings,        group: "system" },
+  { id: "health",     label: "Health",       icon: Server,          group: "system", badge: "●", badgeColor: "secondary" },
+  { id: "notes",      label: "Notes",        icon: StickyNote,      group: "system" },
+  { id: "settings",   label: "Settings",     icon: Settings,        group: "system" },
 ];
 
 // ── Realtime Activity Feed ────────────────────────────────────────────────────
@@ -491,25 +494,32 @@ const AdminPage = () => {
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [visitorCountryFilter, setVisitorCountryFilter] = useState<string | null>(null);
 
   if (!user) return <Navigate to="/login" replace />;
 
   const currentTab = TABS.find((t) => t.id === activeTab)!;
 
+  const handleCountryFilter = (code: string | null) => {
+    setVisitorCountryFilter(code);
+    setActiveTab("visitors");
+  };
+
   const renderContent = () => {
     switch (activeTab) {
-      case "overview":  return <Overview projects={mockProjects} onTabChange={setActiveTab} />;
-      case "analytics": return <AdminAnalytics />;
-      case "visitors":  return <VisitorLogs />;
-      case "projects":  return <ProjectsTab />;
-      case "security":  return <AdminSecurity />;
-      case "terminal":  return <AdminTerminal />;
-      case "network":   return <AdminNetworkMonitor />;
-      case "vault":     return <AdminFileVault />;
-      case "health":    return <AdminSystemHealth />;
-      case "notes":     return <AdminNotes />;
-      case "settings":  return <AdminSettings />;
-      default:          return null;
+      case "overview":   return <Overview projects={mockProjects} onTabChange={setActiveTab} />;
+      case "analytics":  return <AdminAnalytics onCountryFilter={handleCountryFilter} />;
+      case "visitors":   return <VisitorLogs countryFilter={visitorCountryFilter} />;
+      case "projects":   return <ProjectsTab />;
+      case "security":   return <AdminSecurity />;
+      case "terminal":   return <AdminTerminal />;
+      case "network":    return <AdminNetworkMonitor />;
+      case "vault":      return <AdminFileVault />;
+      case "health":     return <AdminSystemHealth />;
+      case "notes":      return <AdminNotes />;
+      case "bugbounty":  return <AdminBugBounty />;
+      case "settings":   return <AdminSettings />;
+      default:           return null;
     }
   };
 

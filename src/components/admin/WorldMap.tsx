@@ -10,6 +10,8 @@ interface CountryData {
 
 interface WorldMapProps {
   data: CountryData[];
+  selectedCountry?: string | null;
+  onCountryClick?: (code: string | null) => void;
 }
 
 // Approximate [cx, cy] positions on a 1000x500 equirectangular map
@@ -43,7 +45,7 @@ const COLORS = [
   "hsl(35 90% 55%)", "hsl(340 75% 55%)", "hsl(280 70% 55%)",
 ];
 
-export function WorldMap({ data }: WorldMapProps) {
+export function WorldMap({ data, selectedCountry, onCountryClick }: WorldMapProps) {
   const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data]);
 
   const bubbles = useMemo(() => {
@@ -57,6 +59,11 @@ export function WorldMap({ data }: WorldMapProps) {
       })
       .sort((a, b) => a.r - b.r);
   }, [data, maxValue]);
+
+  const handleClick = (code: string) => {
+    if (!onCountryClick) return;
+    onCountryClick(selectedCountry === code ? null : code);
+  };
 
   return (
     <div className="relative w-full" style={{ paddingBottom: "50%" }}>
@@ -83,75 +90,116 @@ export function WorldMap({ data }: WorldMapProps) {
         ))}
 
         {/* Country bubbles */}
-        {bubbles.map((b, i) => (
-          <g key={b.code} className="group">
-            {/* Pulse ring */}
-            <motion.circle
-              cx={b.cx} cy={b.cy} r={b.r + 6}
-              fill="none" stroke={COLORS[i % COLORS.length]}
-              strokeWidth="1"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.05, 0.25] }}
-              transition={{ duration: 2.5, delay: i * 0.12, repeat: Infinity, ease: "easeInOut" }}
-            />
-            {/* Main bubble */}
-            <motion.circle
-              cx={b.cx} cy={b.cy} r={b.r}
-              fill={`${COLORS[i % COLORS.length].replace(")", " / " + (0.25 + b.ratio * 0.5) + ")")}`}
-              stroke={COLORS[i % COLORS.length]}
-              strokeWidth={1 + b.ratio}
-              strokeOpacity={0.5 + b.ratio * 0.4}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: i * 0.08, ease: "backOut" }}
-            />
-            {/* Country code label */}
-            <motion.text
-              x={b.cx} y={b.cy + 1}
-              textAnchor="middle" dominantBaseline="middle"
-              fill="hsl(var(--primary-foreground))"
-              fontSize={b.r > 14 ? 9 : 7} fontWeight="700" fontFamily="monospace"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.08 + 0.3 }}
-              style={{ pointerEvents: "none" }}
+        {bubbles.map((b, i) => {
+          const isSelected = selectedCountry === b.code;
+          const isDimmed = selectedCountry != null && !isSelected;
+          const color = COLORS[i % COLORS.length];
+
+          return (
+            <g
+              key={b.code}
+              className="group"
+              onClick={() => handleClick(b.code)}
+              style={{ cursor: onCountryClick ? "pointer" : "default" }}
             >
-              {b.code}
-            </motion.text>
+              {/* Pulse ring */}
+              <motion.circle
+                cx={b.cx} cy={b.cy} r={b.r + 6}
+                fill="none" stroke={color}
+                strokeWidth={isSelected ? 2 : 1}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{
+                  scale: [1, isSelected ? 1.25 : 1.15, 1],
+                  opacity: isSelected ? [0.5, 0.15, 0.5] : [0.25, 0.05, 0.25],
+                }}
+                transition={{ duration: isSelected ? 1.5 : 2.5, delay: i * 0.12, repeat: Infinity, ease: "easeInOut" }}
+              />
 
-            {/* Tooltip on hover — flag + name + count */}
-            <title>{b.flag} {b.name}: {b.value} visit{b.value !== 1 ? "s" : ""}</title>
+              {/* Selection ring */}
+              {isSelected && (
+                <motion.circle
+                  cx={b.cx} cy={b.cy} r={b.r + 12}
+                  fill="none" stroke={color} strokeWidth="1.5" strokeDasharray="4 3"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 0.7, rotate: 360 }}
+                  transition={{ duration: 0.3, rotate: { duration: 8, repeat: Infinity, ease: "linear" } }}
+                />
+              )}
 
-            {/* Flag emoji for larger bubbles */}
-            {b.r > 20 && (
+              {/* Main bubble */}
+              <motion.circle
+                cx={b.cx} cy={b.cy} r={b.r}
+                fill={`${color.replace(")", " / " + (isDimmed ? 0.08 : (0.25 + b.ratio * 0.5)) + ")")}`}
+                stroke={color}
+                strokeWidth={isSelected ? 2 + b.ratio : 1 + b.ratio}
+                strokeOpacity={isDimmed ? 0.2 : (0.5 + b.ratio * 0.4)}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: isDimmed ? 0.35 : 1 }}
+                transition={{ duration: 0.5, delay: i * 0.08, ease: "backOut" }}
+                whileHover={onCountryClick ? { scale: 1.15 } : {}}
+              />
+
+              {/* Country code label */}
               <motion.text
-                x={b.cx} y={b.cy - b.r - 6}
+                x={b.cx} y={b.cy + 1}
                 textAnchor="middle" dominantBaseline="middle"
-                fontSize="14"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.08 + 0.4 }}
+                fill="hsl(var(--primary-foreground))"
+                fontSize={b.r > 14 ? 9 : 7} fontWeight="700" fontFamily="monospace"
+                initial={{ opacity: 0 }} animate={{ opacity: isDimmed ? 0.3 : 1 }}
+                transition={{ delay: i * 0.08 + 0.3 }}
                 style={{ pointerEvents: "none" }}
               >
-                {b.flag}
+                {b.code}
               </motion.text>
-            )}
 
-            {/* Visit count for large bubbles */}
-            {b.r > 18 && (
-              <motion.text
-                x={b.cx} y={b.cy + 11}
-                textAnchor="middle"
-                fill="hsl(var(--secondary))"
-                fontSize="7" fontWeight="800" fontFamily="monospace"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.08 + 0.4 }}
-                style={{ pointerEvents: "none" }}
-              >
-                {b.value}
-              </motion.text>
-            )}
-          </g>
-        ))}
+              {/* Tooltip */}
+              <title>{b.flag} {b.name}: {b.value} visit{b.value !== 1 ? "s" : ""}{onCountryClick ? (isSelected ? " — click to deselect" : " — click to filter") : ""}</title>
+
+              {/* Flag emoji for larger bubbles */}
+              {b.r > 20 && (
+                <motion.text
+                  x={b.cx} y={b.cy - b.r - 6}
+                  textAnchor="middle" dominantBaseline="middle"
+                  fontSize="14"
+                  initial={{ opacity: 0 }} animate={{ opacity: isDimmed ? 0.2 : 1 }}
+                  transition={{ delay: i * 0.08 + 0.4 }}
+                  style={{ pointerEvents: "none" }}
+                >
+                  {b.flag}
+                </motion.text>
+              )}
+
+              {/* Visit count for large bubbles */}
+              {b.r > 18 && (
+                <motion.text
+                  x={b.cx} y={b.cy + 11}
+                  textAnchor="middle"
+                  fill="hsl(var(--secondary))"
+                  fontSize="7" fontWeight="800" fontFamily="monospace"
+                  initial={{ opacity: 0 }} animate={{ opacity: isDimmed ? 0.2 : 1 }}
+                  transition={{ delay: i * 0.08 + 0.4 }}
+                  style={{ pointerEvents: "none" }}
+                >
+                  {b.value}
+                </motion.text>
+              )}
+            </g>
+          );
+        })}
       </svg>
+
+      {/* "Click to clear filter" hint */}
+      {selectedCountry && onCountryClick && (
+        <motion.button
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => onCountryClick(null)}
+          className="absolute bottom-2 right-2 flex items-center gap-1.5 glass px-3 py-1.5 rounded-xl text-xs font-bold border border-primary/30 text-primary hover:bg-primary/20 transition-colors"
+        >
+          <span>🗺 Showing: {data.find((d) => d.code === selectedCountry)?.name ?? selectedCountry}</span>
+          <span className="text-muted-foreground">✕ Clear</span>
+        </motion.button>
+      )}
     </div>
   );
 }
