@@ -404,6 +404,7 @@ function ProjectsTab() {
 // ── Main Admin Page ───────────────────────────────────────────────────────────
 const AdminPage = () => {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
