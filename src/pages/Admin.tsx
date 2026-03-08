@@ -48,7 +48,7 @@ const AdminPage = () => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const onSubmit = async (data: ProjectFormData) => {
+  const onSubmit = async (data: AdminFormData) => {
     setSubmitState("idle");
     try {
       // Try Firestore first
