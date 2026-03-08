@@ -184,14 +184,14 @@ function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange:
   }
 
   const quickStats = [
-    { label: "Total Projects", value: projects.length, icon: Layers, color: "text-primary", bg: "bg-primary/10", tab: "projects" as TabId },
-    { label: "Featured Works", value: projects.filter((p) => p.featured).length, icon: Star, color: "text-yellow-400", bg: "bg-yellow-400/10", tab: "projects" as TabId },
-    { label: "Visitor Intel", value: "Live", icon: Eye, color: "text-secondary", bg: "bg-secondary/10", tab: "visitors" as TabId },
-    { label: "Threats Today", value: 8, icon: Shield, color: "text-destructive", bg: "bg-destructive/10", tab: "security" as TabId },
-    { label: "System Health", value: "98%", icon: Server, color: "text-secondary", bg: "bg-secondary/10", tab: "health" as TabId },
-    { label: "Network", value: "Online", icon: Wifi, color: "text-blue-400", bg: "bg-blue-400/10", tab: "network" as TabId },
-    { label: "Open Source", value: projects.filter((p) => p.githubUrl).length, icon: Github, color: "text-muted-foreground", bg: "bg-muted/20", tab: "projects" as TabId },
-    { label: "Analytics", value: "7d", icon: BarChart3, color: "text-primary", bg: "bg-primary/10", tab: "analytics" as TabId },
+    { label: "Total Projects",  value: projects.length,                              icon: Layers,       color: "text-primary",           bg: "bg-primary/10",      tab: "projects"  as TabId },
+    { label: "Featured Works",  value: projects.filter((p) => p.featured).length,    icon: Star,         color: "text-yellow-400",        bg: "bg-yellow-400/10",   tab: "projects"  as TabId },
+    { label: "Visitor Intel",   value: "Live",                                        icon: Eye,          color: "text-secondary",         bg: "bg-secondary/10",    tab: "visitors"  as TabId },
+    { label: "Activity Logs",   value: "Live",                                        icon: Activity,     color: "text-blue-400",          bg: "bg-blue-500/10",     tab: "activity"  as TabId },
+    { label: "Security",        value: "Live",                                        icon: Shield,       color: "text-destructive",       bg: "bg-destructive/10",  tab: "security"  as TabId },
+    { label: "Audit Trail",     value: "Live",                                        icon: BookOpen,     color: "text-secondary",         bg: "bg-secondary/10",    tab: "audit"     as TabId },
+    { label: "System Health",   value: "98%",                                         icon: Server,       color: "text-secondary",         bg: "bg-secondary/10",    tab: "health"    as TabId },
+    { label: "Analytics",       value: "7d",                                          icon: BarChart3,    color: "text-primary",           bg: "bg-primary/10",      tab: "analytics" as TabId },
   ];
 
   return (
