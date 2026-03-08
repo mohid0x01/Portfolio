@@ -13,6 +13,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { addDocument, deleteDocument } from "@/lib/firebase";
 
+// Form data uses string for techStack (raw input), then we transform on submit
+type AdminFormData = Omit<ProjectFormData, "techStack"> & { techStack: string };
+
 const AdminPage = () => {
   const { user, signOut } = useAuth();
   const [projects, setProjects] = useState<Project[]>(mockProjects);
@@ -27,9 +30,14 @@ const AdminPage = () => {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<ProjectFormData>({
-    resolver: zodResolver(projectSchema),
-    defaultValues: editTarget || {},
+  } = useForm<AdminFormData>({
+    resolver: zodResolver(
+      projectSchema.extend({ techStack: projectSchema.shape.techStack.or(
+        // allow raw string input in the form
+        // @ts-ignore
+        (projectSchema.shape.techStack as unknown)
+      ) })
+    ) as never,
   });
 
   if (!user) return <Navigate to="/login" replace />;
