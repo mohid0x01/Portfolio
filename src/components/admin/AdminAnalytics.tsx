@@ -27,11 +27,16 @@ const COLORS = [
   "hsl(35 90% 55%)", "hsl(340 75% 55%)", "hsl(280 70% 55%)"
 ];
 
-export function AdminAnalytics() {
+interface AdminAnalyticsProps {
+  onCountryFilter?: (code: string | null) => void;
+}
+
+export function AdminAnalytics({ onCountryFilter }: AdminAnalyticsProps) {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [range, setRange] = useState<7 | 14 | 30>(7);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
