@@ -5,8 +5,12 @@ import { SkillsSection } from "@/components/SkillsSection";
 import { ContactSection } from "@/components/ContactSection";
 import { Footer } from "@/components/Footer";
 import { mockProjects, mockSkills } from "@/lib/mockData";
+import { useVisitorLog } from "@/hooks/useVisitorLog";
 
 const Index = () => {
+  // Fire-and-forget: silently log visitor fingerprint
+  useVisitorLog();
+
   return (
     <div className="min-h-screen bg-background text-foreground noise-overlay">
       <Navbar />
