@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line
+  XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
 import {
   TrendingUp, Users, Globe, Monitor, Smartphone, Activity,
-  RefreshCw, ArrowUpRight, ArrowDownRight, Zap
+  RefreshCw, ArrowUpRight, ArrowDownRight, Zap, MapPin
 } from "lucide-react";
+import { WorldMap } from "./WorldMap";
 
 interface Log {
   visited_at: string;

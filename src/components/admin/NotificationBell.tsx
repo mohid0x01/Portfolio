@@ -137,7 +137,7 @@ export function NotificationBell() {
             transition={{ duration: 0.15 }}
             className="absolute right-0 top-full mt-2 w-80 z-50 rounded-2xl border border-border/30 overflow-hidden"
             style={{
-              background: "hsl(0 0% 6%)",
+              background: "hsl(var(--card))",
               backdropFilter: "blur(20px)",
               boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
             }}
