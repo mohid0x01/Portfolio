@@ -84,7 +84,7 @@ function VisitorDrawer({ v, onClose }: { v: VisitorLog; onClose: () => void }) {
   );
 
   const Row = ({ label, value, mono = false, accent = false }: { label: string; value: string | null | undefined; mono?: boolean; accent?: boolean }) => {
-    if (!value && value !== false) return null;
+    if (value == null || value === "") return null;
     return (
       <div className="flex items-start justify-between gap-3 text-xs py-0.5">
         <span className="text-muted-foreground shrink-0 w-32">{label}</span>
