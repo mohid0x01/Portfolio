@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex items-center gap-2">
           <span className="gradient-text font-bold">{mockProfile.name}</span>
           <span>—</span>
-          <span>{mockProfile.tagline}</span>
+          <span>CEH · Bug Bounty Hunter · Pakistan</span>
         </div>
         <div className="flex items-center gap-1">
           Built with
