@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, User, Bell, Shield, Palette, Code,
   Save, Eye, EyeOff, RefreshCw, Check, Key,
-  Moon, Sun, Monitor, Zap, Globe, Lock,
+  Moon, Sun, Zap, Lock,
   ToggleLeft, ToggleRight, ChevronRight, Info
 } from "lucide-react";
+import { useTheme } from "@/lib/theme";
 
 type Section = "profile" | "security" | "notifications" | "appearance" | "advanced";
 
@@ -21,6 +22,7 @@ export function AdminSettings() {
   const [section, setSection] = useState<Section>("profile");
   const [saved, setSaved] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   // Profile
   const [profile, setProfile] = useState({ name: "Ghost Admin", email: "admin@chat.com", bio: "Cybersecurity researcher & bug hunter", handle: "gh0st_admin" });
@@ -223,6 +225,38 @@ export function AdminSettings() {
               <motion.div key="appearance" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
                 <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><Palette className="w-4 h-4 text-blue-400" />Appearance</h3>
                 <div className="space-y-5">
+                  {/* Theme Mode */}
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-3 block font-semibold uppercase tracking-widest">Color Mode</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {([
+                        { val: "dark" as const, icon: Moon, label: "Dark Mode", desc: "Cyberpunk dark theme" },
+                        { val: "light" as const, icon: Sun, label: "Light Mode", desc: "Clean light theme" },
+                      ]).map(({ val, icon: Icon, label: lbl, desc }) => (
+                        <button
+                          key={val}
+                          onClick={() => setTheme(val)}
+                          className={`flex flex-col items-start gap-1.5 p-4 rounded-2xl border-2 transition-all text-left ${
+                            theme === val
+                              ? "border-primary bg-primary/10"
+                              : "border-border/30 hover:border-border/60 bg-muted/10"
+                          }`}
+                        >
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${theme === val ? "bg-primary/20" : "bg-muted/30"}`}>
+                            <Icon className={`w-5 h-5 ${theme === val ? "text-primary" : "text-muted-foreground"}`} />
+                          </div>
+                          <div>
+                            <p className={`text-sm font-bold ${theme === val ? "text-primary" : "text-foreground"}`}>{lbl}</p>
+                            <p className="text-xs text-muted-foreground">{desc}</p>
+                          </div>
+                          {theme === val && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold">Active</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Accent colors */}
                   <div>
                     <label className="text-xs text-muted-foreground mb-2 block">Accent Color</label>
                     <div className="flex gap-2">

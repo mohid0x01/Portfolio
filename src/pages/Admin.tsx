@@ -8,7 +8,7 @@ import {
   Server, FolderLock, Settings, Layers, Github,
   Star, Plus, CheckCircle2, AlertCircle, X, Edit3, Trash2,
   Activity, Zap, Globe, ChevronRight, Menu, Ghost,
-  TrendingUp, Users, Database
+  TrendingUp, Users, Database, Sun, Moon
 } from "lucide-react";
 import { z } from "zod";
 import { Navigate } from "react-router-dom";
@@ -22,7 +22,9 @@ import { AdminNetworkMonitor } from "@/components/admin/AdminNetworkMonitor";
 import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 import { AdminFileVault } from "@/components/admin/AdminFileVault";
 import { AdminSettings } from "@/components/admin/AdminSettings";
+import { NotificationBell } from "@/components/admin/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/lib/theme";
 import { mockProjects } from "@/lib/mockData";
 import type { Project } from "@/lib/schemas";
 import { addDocument, deleteDocument } from "@/lib/firebase";
@@ -402,6 +404,7 @@ function ProjectsTab() {
 // ── Main Admin Page ───────────────────────────────────────────────────────────
 const AdminPage = () => {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -593,6 +596,16 @@ const AdminPage = () => {
                 );
               })}
             </div>
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="glass p-2 rounded-xl text-muted-foreground hover:text-foreground transition-colors"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            {/* Realtime notifications */}
+            <NotificationBell />
           </div>
         </header>
 

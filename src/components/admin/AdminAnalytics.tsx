@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line
+  XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
 import {
   TrendingUp, Users, Globe, Monitor, Smartphone, Activity,
-  RefreshCw, ArrowUpRight, ArrowDownRight, Zap
+  RefreshCw, ArrowUpRight, ArrowDownRight, Zap, MapPin
 } from "lucide-react";
+import { WorldMap } from "./WorldMap";
 
 interface Log {
   visited_at: string;
@@ -62,12 +63,20 @@ export function AdminAnalytics() {
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value]) => ({ name, value }));
   })();
 
-  // Country breakdown
+  // Country breakdown with codes for world map
   const countryData = (() => {
-    const map: Record<string, number> = {};
-    logs.forEach((l) => { if (l.country) map[l.country] = (map[l.country] || 0) + 1; });
-    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value }));
+    const map: Record<string, { name: string; code: string; value: number }> = {};
+    logs.forEach((l) => {
+      if (l.country) {
+        const key = l.country;
+        if (!map[key]) map[key] = { name: l.country, code: (l as { country_code?: string | null }).country_code || l.country.substring(0, 2).toUpperCase(), value: 0 };
+        map[key].value++;
+      }
+    });
+    return Object.values(map).sort((a, b) => b.value - a.value).slice(0, 20);
   })();
+
+  const countryBarData = countryData.slice(0, 8).map((c) => ({ name: c.name, value: c.value }));
 
   // OS breakdown
   const osData = (() => {
@@ -223,6 +232,33 @@ export function AdminAnalytics() {
         </div>
       </div>
 
+      {/* World Map */}
+      <div className="glass rounded-2xl p-5 border border-border/20">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" />
+            Visitor World Map
+          </h3>
+          <span className="text-xs text-muted-foreground">{countryData.length} countries</span>
+        </div>
+        {countryData.length === 0 ? (
+          <div className="h-48 flex items-center justify-center text-muted-foreground text-xs">No geo data yet</div>
+        ) : (
+          <WorldMap data={countryData} />
+        )}
+        {countryData.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {countryData.slice(0, 8).map((c, i) => (
+              <div key={c.code} className="flex items-center gap-1.5 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
+                <span className="text-muted-foreground">{c.name}</span>
+                <span className="font-mono font-bold">{c.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Bottom row */}
       <div className="grid lg:grid-cols-2 gap-4">
         {/* Country bar */}
@@ -231,16 +267,16 @@ export function AdminAnalytics() {
             <Globe className="w-4 h-4 text-blue-400" />
             Top Countries
           </h3>
-          {countryData.length === 0 ? (
+          {countryBarData.length === 0 ? (
             <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={countryData} layout="vertical">
+              <BarChart data={countryBarData} layout="vertical">
                 <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={60} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {countryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  {countryBarData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -250,7 +286,7 @@ export function AdminAnalytics() {
         {/* OS breakdown */}
         <div className="glass rounded-2xl p-5 border border-border/20">
           <h3 className="font-bold text-sm flex items-center gap-2 mb-4">
-            <Monitor className="w-4 h-4 text-indigo-400" />
+            <Monitor className="w-4 h-4 text-primary/70" />
             Operating Systems
           </h3>
           {osData.length === 0 ? (
