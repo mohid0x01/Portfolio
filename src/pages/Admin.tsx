@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +8,7 @@ import {
   Server, FolderLock, Settings, Layers, Github,
   Star, Plus, CheckCircle2, AlertCircle, X, Edit3, Trash2,
   Activity, Zap, Globe, ChevronRight, Menu, Ghost,
-  TrendingUp, Users, Database, Sun, Moon
+  TrendingUp, Users, Database, Sun, Moon, MapPin
 } from "lucide-react";
 import { z } from "zod";
 import { Navigate } from "react-router-dom";
@@ -25,6 +25,8 @@ import { AdminSettings } from "@/components/admin/AdminSettings";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/lib/theme";
+import { countryCodeToFlag } from "@/lib/flagEmoji";
+import { supabase } from "@/integrations/supabase/client";
 import { mockProjects } from "@/lib/mockData";
 import type { Project } from "@/lib/schemas";
 import { addDocument, deleteDocument } from "@/lib/firebase";
@@ -82,8 +84,65 @@ const TABS: Tab[] = [
   { id: "settings",  label: "Settings",    icon: Settings,        group: "system" },
 ];
 
+// ── Realtime Activity Feed ────────────────────────────────────────────────────
+interface ActivityItem {
+  id: string;
+  msg: string;
+  type: "visitor" | "bot" | "system";
+  time: Date;
+}
+
+function useRealtimeActivity() {
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const seenRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("overview-activity")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "visitor_logs" }, (payload) => {
+        const row = payload.new as {
+          id: string;
+          country?: string | null;
+          country_code?: string | null;
+          city?: string | null;
+          is_bot?: boolean | null;
+          ip_address?: string | null;
+          visited_at?: string;
+        };
+        if (seenRef.current.has(row.id)) return;
+        seenRef.current.add(row.id);
+        const flag = row.country_code ? countryCodeToFlag(row.country_code) : "🌐";
+        const location = [row.city, row.country].filter(Boolean).join(", ") || "Unknown";
+        setItems((prev) => [
+          {
+            id: row.id,
+            msg: row.is_bot
+              ? `🤖 Bot detected — ${row.ip_address || "Unknown IP"}`
+              : `${flag} New visitor from ${location}`,
+            type: row.is_bot ? "bot" : "visitor",
+            time: new Date(row.visited_at || Date.now()),
+          },
+          ...prev.slice(0, 19),
+        ]);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  return items;
+}
+
 // ── Overview quick-stats ──────────────────────────────────────────────────────
 function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange: (t: TabId) => void }) {
+  const realtimeActivity = useRealtimeActivity();
+
+  function timeAgo(date: Date) {
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 60) return `${s}s ago`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    return `${Math.floor(s / 3600)}h ago`;
+  }
+
   const quickStats = [
     { label: "Total Projects", value: projects.length, icon: Layers, color: "text-primary", bg: "bg-primary/10", tab: "projects" as TabId },
     { label: "Featured Works", value: projects.filter((p) => p.featured).length, icon: Star, color: "text-yellow-400", bg: "bg-yellow-400/10", tab: "projects" as TabId },
@@ -94,24 +153,6 @@ function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange:
     { label: "Open Source", value: projects.filter((p) => p.githubUrl).length, icon: Github, color: "text-muted-foreground", bg: "bg-muted/20", tab: "projects" as TabId },
     { label: "Analytics", value: "7d", icon: BarChart3, color: "text-primary", bg: "bg-primary/10", tab: "analytics" as TabId },
   ];
-
-  const recentActivity = [
-    { msg: "New visitor from 🇧🇷 São Paulo, Brazil", time: "2m ago", type: "visitor" },
-    { msg: "SQLi attempt blocked — 45.33.32.156", time: "5m ago", type: "threat" },
-    { msg: "Ghost Chat — new message in #general", time: "12m ago", type: "chat" },
-    { msg: "System health check passed (98/100)", time: "30m ago", type: "system" },
-    { msg: "New visitor from 🇩🇪 Berlin, Germany", time: "45m ago", type: "visitor" },
-    { msg: "Brute force blocked — 192.168.1.55", time: "1h ago", type: "threat" },
-    { msg: "Edge function deployed successfully", time: "2h ago", type: "system" },
-    { msg: "Daily analytics report generated", time: "9h ago", type: "system" },
-  ];
-
-  const activityColor: Record<string, string> = {
-    visitor: "text-primary",
-    threat: "text-destructive",
-    chat: "text-secondary",
-    system: "text-blue-400",
-  };
 
   return (
     <div className="space-y-6">
@@ -145,31 +186,43 @@ function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange:
 
       {/* Bottom grid */}
       <div className="grid lg:grid-cols-2 gap-4">
-        {/* Recent activity */}
+        {/* Realtime activity feed */}
         <div className="glass rounded-2xl p-5 border border-border/20">
           <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
             <Activity className="w-4 h-4 text-primary" />
-            Recent Activity
+            Live Activity Feed
+            <span className="ml-auto flex items-center gap-1 text-[10px] font-mono text-secondary">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+              LIVE
+            </span>
           </h3>
-          <div className="space-y-2">
-            {recentActivity.map((a, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.05 }}
-                className="flex items-start gap-2.5 py-1.5"
-              >
-                <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
-                  a.type === "visitor" ? "bg-primary" :
-                  a.type === "threat" ? "bg-destructive" :
-                  a.type === "chat" ? "bg-secondary" :
-                  "bg-blue-400"
-                }`} />
-                <span className="text-xs text-foreground/80 flex-1">{a.msg}</span>
-                <span className="text-[10px] text-muted-foreground/50 flex-shrink-0 font-mono">{a.time}</span>
-              </motion.div>
-            ))}
+          <div className="space-y-0.5 max-h-64 overflow-y-auto scrollbar-thin pr-1">
+            {realtimeActivity.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <MapPin className="w-6 h-6 text-muted-foreground/20 mb-2" />
+                <p className="text-xs text-muted-foreground">Watching for activity...</p>
+                <p className="text-[10px] text-muted-foreground/40 mt-0.5">New visitors will appear here in realtime</p>
+              </div>
+            ) : (
+              <AnimatePresence initial={false}>
+                {realtimeActivity.map((a) => (
+                  <motion.div
+                    key={a.id}
+                    initial={{ opacity: 0, x: -16, height: 0 }}
+                    animate={{ opacity: 1, x: 0, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex items-start gap-2.5 py-1.5"
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                      a.type === "bot" ? "bg-destructive" : "bg-primary"
+                    }`} />
+                    <span className="text-xs text-foreground/80 flex-1">{a.msg}</span>
+                    <span className="text-[10px] text-muted-foreground/50 flex-shrink-0 font-mono whitespace-nowrap">{timeAgo(a.time)}</span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
           </div>
         </div>
 

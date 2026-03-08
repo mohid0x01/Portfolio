@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Globe, Shield, X, Eye, Zap } from "lucide-react";
+import { Bell, Shield, X, Eye, Zap, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { countryCodeToFlag } from "@/lib/flagEmoji";
 
 interface Notification {
   id: string;
   type: "visitor" | "threat" | "bot";
   message: string;
   detail: string;
+  flag: string;
   time: Date;
   read: boolean;
 }
@@ -44,11 +46,14 @@ export function NotificationBell() {
           const row = payload.new as {
             id: string;
             country?: string | null;
+            country_code?: string | null;
             city?: string | null;
             is_bot?: boolean | null;
             ip_address?: string | null;
             visited_at?: string;
           };
+
+          const flag = row.country_code ? countryCodeToFlag(row.country_code) : "🌐";
 
           if (row.is_bot) {
             setNotifications((prev) => [
@@ -57,6 +62,7 @@ export function NotificationBell() {
                 type: "bot",
                 message: "Bot detected & logged",
                 detail: row.ip_address ? `IP: ${row.ip_address}` : "Unknown IP",
+                flag: "🤖",
                 time: new Date(row.visited_at || Date.now()),
                 read: false,
               },
@@ -71,6 +77,7 @@ export function NotificationBell() {
                 type: "visitor",
                 message: `New visitor from ${location}`,
                 detail: row.ip_address || "Unknown IP",
+                flag,
                 time: new Date(row.visited_at || Date.now()),
                 read: false,
               },
@@ -95,7 +102,7 @@ export function NotificationBell() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
 
   const iconForType = (type: Notification["type"]) => {
-    if (type === "visitor") return <Globe className="w-3.5 h-3.5 text-primary" />;
+    if (type === "visitor") return <MapPin className="w-3.5 h-3.5 text-primary" />;
     if (type === "bot") return <Zap className="w-3.5 h-3.5 text-destructive" />;
     return <Shield className="w-3.5 h-3.5 text-yellow-400" />;
   };
@@ -153,16 +160,14 @@ export function NotificationBell() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                {notifications.length > 0 && (
-                  <button
-                    onClick={markAllRead}
-                    className="text-[10px] text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
-                  >
-                    Mark read
-                  </button>
-                )}
-              </div>
+              {notifications.length > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="text-[10px] text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
+                >
+                  Mark read
+                </button>
+              )}
             </div>
 
             {/* Notification list */}
@@ -184,14 +189,16 @@ export function NotificationBell() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       className={`flex items-start gap-3 px-4 py-3 border-b border-border/10 hover:bg-muted/10 transition-colors group ${
-                        !n.read ? "bg-primary/3" : ""
+                        !n.read ? "bg-primary/[0.03]" : ""
                       }`}
                     >
-                      <div className={`w-7 h-7 rounded-lg ${bgForType(n.type)} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      {/* Flag + icon */}
+                      <div className={`w-8 h-8 rounded-lg ${bgForType(n.type)} flex items-center justify-center flex-shrink-0 mt-0.5 relative`}>
                         {iconForType(n.type)}
+                        <span className="absolute -bottom-1 -right-1 text-[10px] leading-none">{n.flag}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium leading-tight truncate">{n.message}</p>
+                        <p className="text-xs font-medium leading-tight">{n.message}</p>
                         <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{n.detail}</p>
                         <p className="text-[10px] text-muted-foreground/50 mt-0.5">{timeAgo(n.time)}</p>
                       </div>

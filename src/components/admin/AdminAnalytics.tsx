@@ -7,13 +7,14 @@ import {
 } from "recharts";
 import {
   TrendingUp, Users, Globe, Monitor, Smartphone, Activity,
-  RefreshCw, ArrowUpRight, ArrowDownRight, Zap, MapPin
+  RefreshCw, ArrowUpRight, ArrowDownRight, Zap, MapPin, Download
 } from "lucide-react";
 import { WorldMap } from "./WorldMap";
 
 interface Log {
   visited_at: string;
   country: string | null;
+  country_code?: string | null;
   browser: string | null;
   os: string | null;
   is_mobile: boolean | null;
@@ -29,6 +30,7 @@ const COLORS = [
 export function AdminAnalytics() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [range, setRange] = useState<7 | 14 | 30>(7);
 
   const load = useCallback(async () => {
@@ -37,7 +39,7 @@ export function AdminAnalytics() {
     from.setDate(from.getDate() - range);
     const { data } = await supabase
       .from("visitor_logs")
-      .select("visited_at,country,browser,os,is_mobile,is_bot,device_type")
+      .select("visited_at,country,country_code,browser,os,is_mobile,is_bot,device_type")
       .gte("visited_at", from.toISOString())
       .order("visited_at", { ascending: true });
     if (data) setLogs(data as Log[]);
@@ -45,6 +47,35 @@ export function AdminAnalytics() {
   }, [range]);
 
   useEffect(() => { load(); }, [load]);
+
+  // CSV export — fetches ALL columns
+  const exportCSV = useCallback(async () => {
+    setExporting(true);
+    const from = new Date();
+    from.setDate(from.getDate() - range);
+    const { data } = await supabase
+      .from("visitor_logs")
+      .select("*")
+      .gte("visited_at", from.toISOString())
+      .order("visited_at", { ascending: false });
+    if (!data || data.length === 0) { setExporting(false); return; }
+
+    const headers = Object.keys(data[0]);
+    const escape = (v: unknown) => {
+      if (v == null) return "";
+      const s = String(v).replace(/"/g, '""');
+      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s}"` : s;
+    };
+    const csv = [headers.join(","), ...data.map((row) => headers.map((h) => escape((row as Record<string, unknown>)[h])).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `visitor-logs-${range}d-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExporting(false);
+  }, [range]);
 
   // Build daily traffic data
   const dailyData = (() => {
@@ -132,6 +163,15 @@ export function AdminAnalytics() {
               {r}d
             </button>
           ))}
+          {/* CSV Export */}
+          <button
+            onClick={exportCSV}
+            disabled={exporting || logs.length === 0}
+            className="glass p-2 rounded-lg text-muted-foreground hover:text-secondary transition-colors disabled:opacity-40"
+            title={`Export last ${range}d as CSV`}
+          >
+            <Download className={`w-4 h-4 ${exporting ? "animate-bounce" : ""}`} />
+          </button>
           <button onClick={load} className="glass p-2 rounded-lg text-muted-foreground hover:text-primary transition-colors">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
