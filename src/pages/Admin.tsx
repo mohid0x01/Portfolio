@@ -4,8 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, LogOut, Trash2, Edit3, CheckCircle2, AlertCircle,
-  Layers, Github, ExternalLink, Star, LayoutDashboard, Code2, X
+  Layers, Github, ExternalLink, Star, LayoutDashboard, Code2, X, Eye
 } from "lucide-react";
+import { VisitorLogs } from "@/components/admin/VisitorLogs";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { z } from "zod";
 import type { Project } from "@/lib/schemas";
@@ -30,6 +31,7 @@ type AdminFormData = z.infer<typeof adminProjectSchema>;
 
 const AdminPage = () => {
   const { user, signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState<"projects" | "visitors">("projects");
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Project | null>(null);
@@ -125,9 +127,19 @@ const AdminPage = () => {
 
         {/* Nav */}
         <nav className="flex-1 p-4 space-y-1">
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-primary/10 text-primary">
+          <button
+            onClick={() => setActiveTab("projects")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === "projects" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+          >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab("visitors")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === "visitors" ? "bg-secondary/10 text-secondary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+          >
+            <Eye className="w-4 h-4" />
+            Visitor Logs
           </button>
           <a href="/" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
             <ExternalLink className="w-4 h-4" />
@@ -152,10 +164,18 @@ const AdminPage = () => {
         {/* Mobile header */}
         <div className="md:hidden flex items-center justify-between mb-6">
           <span className="font-black gradient-text text-lg">Admin Panel</span>
-          <button onClick={signOut} className="glass p-2 rounded-xl text-muted-foreground hover:text-destructive transition-colors">
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setActiveTab("projects")} className={`glass p-2 rounded-xl transition-colors ${activeTab === "projects" ? "text-primary" : "text-muted-foreground"}`}><LayoutDashboard className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab("visitors")}  className={`glass p-2 rounded-xl transition-colors ${activeTab === "visitors"  ? "text-secondary" : "text-muted-foreground"}`}><Eye className="w-4 h-4" /></button>
+            <button onClick={signOut} className="glass p-2 rounded-xl text-muted-foreground hover:text-destructive transition-colors"><LogOut className="w-4 h-4" /></button>
+          </div>
         </div>
+
+        {/* ── Visitor Logs Tab ─────────────────────────── */}
+        {activeTab === "visitors" && <VisitorLogs />}
+
+        {/* ── Projects Tab ─────────────────────────────── */}
+        {activeTab === "projects" && (<>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -395,6 +415,7 @@ const AdminPage = () => {
             <p>No projects yet. Add your first one!</p>
           </div>
         )}
+        </>)}
       </div>
     </div>
   );

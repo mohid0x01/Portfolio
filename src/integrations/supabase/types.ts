@@ -230,6 +230,132 @@ export type Database = {
           },
         ]
       }
+      visitor_logs: {
+        Row: {
+          asn: string | null
+          browser: string | null
+          browser_version: string | null
+          city: string | null
+          color_depth: number | null
+          connection_type: string | null
+          cookies_enabled: boolean | null
+          country: string | null
+          country_code: string | null
+          device_memory: number | null
+          device_type: string | null
+          do_not_track: string | null
+          fingerprint: string | null
+          hardware_concurrency: number | null
+          id: string
+          ip_address: string | null
+          is_bot: boolean | null
+          is_mobile: boolean | null
+          isp: string | null
+          language: string | null
+          languages: string[] | null
+          os: string | null
+          os_version: string | null
+          page_url: string | null
+          pixel_ratio: number | null
+          raw_headers: Json | null
+          referrer: string | null
+          region: string | null
+          screen_height: number | null
+          screen_width: number | null
+          timezone: string | null
+          timezone_offset: number | null
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          viewport_height: number | null
+          viewport_width: number | null
+          visited_at: string
+        }
+        Insert: {
+          asn?: string | null
+          browser?: string | null
+          browser_version?: string | null
+          city?: string | null
+          color_depth?: number | null
+          connection_type?: string | null
+          cookies_enabled?: boolean | null
+          country?: string | null
+          country_code?: string | null
+          device_memory?: number | null
+          device_type?: string | null
+          do_not_track?: string | null
+          fingerprint?: string | null
+          hardware_concurrency?: number | null
+          id?: string
+          ip_address?: string | null
+          is_bot?: boolean | null
+          is_mobile?: boolean | null
+          isp?: string | null
+          language?: string | null
+          languages?: string[] | null
+          os?: string | null
+          os_version?: string | null
+          page_url?: string | null
+          pixel_ratio?: number | null
+          raw_headers?: Json | null
+          referrer?: string | null
+          region?: string | null
+          screen_height?: number | null
+          screen_width?: number | null
+          timezone?: string | null
+          timezone_offset?: number | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          viewport_height?: number | null
+          viewport_width?: number | null
+          visited_at?: string
+        }
+        Update: {
+          asn?: string | null
+          browser?: string | null
+          browser_version?: string | null
+          city?: string | null
+          color_depth?: number | null
+          connection_type?: string | null
+          cookies_enabled?: boolean | null
+          country?: string | null
+          country_code?: string | null
+          device_memory?: number | null
+          device_type?: string | null
+          do_not_track?: string | null
+          fingerprint?: string | null
+          hardware_concurrency?: number | null
+          id?: string
+          ip_address?: string | null
+          is_bot?: boolean | null
+          is_mobile?: boolean | null
+          isp?: string | null
+          language?: string | null
+          languages?: string[] | null
+          os?: string | null
+          os_version?: string | null
+          page_url?: string | null
+          pixel_ratio?: number | null
+          raw_headers?: Json | null
+          referrer?: string | null
+          region?: string | null
+          screen_height?: number | null
+          screen_width?: number | null
+          timezone?: string | null
+          timezone_offset?: number | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          viewport_height?: number | null
+          viewport_width?: number | null
+          visited_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
