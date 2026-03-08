@@ -163,6 +163,15 @@ export function AdminAnalytics() {
               {r}d
             </button>
           ))}
+          {/* CSV Export */}
+          <button
+            onClick={exportCSV}
+            disabled={exporting || logs.length === 0}
+            className="glass p-2 rounded-lg text-muted-foreground hover:text-secondary transition-colors disabled:opacity-40"
+            title={`Export last ${range}d as CSV`}
+          >
+            <Download className={`w-4 h-4 ${exporting ? "animate-bounce" : ""}`} />
+          </button>
           <button onClick={load} className="glass p-2 rounded-lg text-muted-foreground hover:text-primary transition-colors">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
