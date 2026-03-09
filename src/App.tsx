@@ -12,6 +12,7 @@ import { CursorSpotlight } from "@/components/CursorSpotlight";
 import Index from "./pages/Index";
 import LoginPage from "./pages/Login";
 import AdminPage from "./pages/Admin";
+import BugBountyPage from "./pages/BugBounty";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/bug-bounty" element={<BugBountyPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

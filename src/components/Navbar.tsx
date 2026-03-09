@@ -58,8 +58,14 @@ export function Navbar() {
           </a>
         ))}
         <a
+          href="/bug-bounty"
+          className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium glass hover:border-secondary/30 text-muted-foreground hover:text-secondary transition-all"
+        >
+          Bug Bounty
+        </a>
+        <a
           href="/admin"
-          className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium glass hover:border-primary/30 text-muted-foreground hover:text-primary transition-all"
+          className="ml-1 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium glass hover:border-primary/30 text-muted-foreground hover:text-primary transition-all"
         >
           Admin
           <ExternalLink className="w-3 h-3" />
@@ -165,6 +171,13 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
+            <a
+              href="/bug-bounty"
+              onClick={() => setOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-medium text-secondary border border-secondary/20 bg-secondary/5"
+            >
+              Bug Bounty
+            </a>
             <a
               href="/admin"
               className="px-4 py-3 rounded-xl text-sm font-medium text-primary border border-primary/20 bg-primary/5"
