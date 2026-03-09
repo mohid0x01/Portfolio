@@ -6,11 +6,11 @@ import { ExperienceSection } from "@/components/ExperienceSection";
 import { SkillsSection } from "@/components/SkillsSection";
 import { ContactSection } from "@/components/ContactSection";
 import { Footer } from "@/components/Footer";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { mockProjects, mockSkills } from "@/lib/mockData";
 import { useVisitorLog } from "@/hooks/useVisitorLog";
 
 const Index = () => {
-  // Fire-and-forget: silently log visitor fingerprint
   useVisitorLog();
 
   return (
@@ -18,11 +18,26 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
-        <ProjectsSection projects={mockProjects} />
-        <TechStackSection />
-        <ExperienceSection />
-        <SkillsSection skills={mockSkills} />
-        <ContactSection />
+
+        <ScrollReveal delay={0}>
+          <ProjectsSection projects={mockProjects} />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.05} direction="left">
+          <TechStackSection />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.05} direction="right">
+          <ExperienceSection />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.05}>
+          <SkillsSection skills={mockSkills} />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.05}>
+          <ContactSection />
+        </ScrollReveal>
       </main>
       <Footer />
     </div>
