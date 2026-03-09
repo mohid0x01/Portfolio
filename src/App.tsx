@@ -40,6 +40,10 @@ const App = () => (
           </BrowserRouter>
           {/* Ghost Chat — always mounted, floats over all pages */}
           <GhostChatPortal />
+          {/* Back to top */}
+          <BackToTop />
+          {/* Cursor spotlight glow */}
+          <CursorSpotlight />
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
