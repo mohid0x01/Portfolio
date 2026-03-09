@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { GlassCard, StaggerContainer, StaggerItem } from "@/components/ui/GlassCard";
 import { ExternalLink, Github, Star } from "lucide-react";
 import type { Project } from "@/lib/schemas";
+import { ProjectModal } from "@/components/ProjectModal";
 
 interface ProjectsProps {
   projects: Project[];
@@ -34,136 +36,151 @@ function TechBadge({ tech }: { tech: string }) {
 }
 
 export function ProjectsSection({ projects }: ProjectsProps) {
+  const [selected, setSelected] = useState<Project | null>(null);
   const featured = projects.filter((p) => p.featured);
   const rest = projects.filter((p) => !p.featured);
 
   return (
-    <section id="projects" className="py-24 px-6">
-      <div className="container mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <p className="text-secondary font-mono text-sm mb-3 tracking-widest uppercase">
-            // Selected Work
-          </p>
-          <h2 className="section-title text-5xl">Projects</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Security tools, web apps, and open-source projects — built for hackers, researchers, and curious minds.
-          </p>
-        </div>
+    <>
+      <section id="projects" className="py-24 px-6">
+        <div className="container mx-auto max-w-6xl">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <p className="text-secondary font-mono text-sm mb-3 tracking-widest uppercase">
+              // Selected Work
+            </p>
+            <h2 className="section-title text-5xl">Projects</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Security tools, web apps, and open-source projects — built for hackers, researchers, and curious minds.
+            </p>
+          </div>
 
-        {/* Featured projects — larger cards */}
-        {featured.length > 0 && (
-          <StaggerContainer className="grid md:grid-cols-2 gap-6 mb-6">
-            {featured.map((project, i) => (
-              <StaggerItem key={project.id}>
-                <GlassCard
-                  className="group h-full p-6 flex flex-col"
-                  glow="primary"
-                  delay={i * 0.08}
-                >
-                  {/* Featured badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="flex items-center gap-1.5 text-xs text-secondary font-mono">
-                      <Star className="w-3 h-3 fill-secondary" />
-                      Featured
-                    </span>
-                    <div className="flex gap-2">
-                      {project.githubUrl && (
-                        <a
-                          href={project.githubUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-8 h-8 glass rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          <Github className="w-4 h-4" />
-                        </a>
-                      )}
-                      {project.liveDemoUrl && (
-                        <a
-                          href={project.liveDemoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-8 h-8 glass rounded-lg flex items-center justify-center text-muted-foreground hover:text-secondary transition-colors"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Project image placeholder */}
-                  <div className="w-full h-40 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative"
-                    style={{ background: "linear-gradient(135deg, hsl(261 87% 50% / 0.1), hsl(162 72% 46% / 0.05))" }}
+          {/* Featured projects — larger cards */}
+          {featured.length > 0 && (
+            <StaggerContainer className="grid md:grid-cols-2 gap-6 mb-6">
+              {featured.map((project, i) => (
+                <StaggerItem key={project.id}>
+                  <GlassCard
+                    className="group h-full p-6 flex flex-col cursor-pointer"
+                    glow="primary"
+                    delay={i * 0.08}
+                    onClick={() => setSelected(project)}
                   >
-                    <span className="text-5xl font-black opacity-10 select-none">
-                      {project.title[0]}
-                    </span>
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ background: "linear-gradient(135deg, hsl(261 87% 50% / 0.15), hsl(162 72% 46% / 0.1))" }}
-                    />
-                  </div>
+                    {/* Featured badge */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="flex items-center gap-1.5 text-xs text-secondary font-mono">
+                        <Star className="w-3 h-3 fill-secondary" />
+                        Featured
+                      </span>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        {project.githubUrl && (
+                          <a
+                            href={project.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-8 h-8 glass rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Github className="w-4 h-4" />
+                          </a>
+                        )}
+                        {project.liveDemoUrl && (
+                          <a
+                            href={project.liveDemoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-8 h-8 glass rounded-lg flex items-center justify-center text-muted-foreground hover:text-secondary transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
 
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
-                    {project.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-4 flex-1">
-                    {project.description}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {project.techStack.map((tech) => (
-                      <TechBadge key={tech} tech={tech} />
-                    ))}
-                  </div>
-                </GlassCard>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        )}
+                    {/* Project image placeholder */}
+                    <div className="w-full h-40 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative"
+                      style={{ background: "linear-gradient(135deg, hsl(261 87% 50% / 0.1), hsl(162 72% 46% / 0.05))" }}
+                    >
+                      <span className="text-5xl font-black opacity-10 select-none">
+                        {project.title[0]}
+                      </span>
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        style={{ background: "linear-gradient(135deg, hsl(261 87% 50% / 0.15), hsl(162 72% 46% / 0.1))" }}
+                      />
+                    </div>
 
-        {/* Rest of projects — compact */}
-        {rest.length > 0 && (
-          <StaggerContainer className="grid md:grid-cols-3 gap-4">
-            {rest.map((project, i) => (
-              <StaggerItem key={project.id}>
-                <GlassCard className="group h-full p-5 flex flex-col" glow="secondary">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold group-hover:text-secondary transition-colors line-clamp-1">
+                    <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
                       {project.title}
                     </h3>
-                    <div className="flex gap-1.5 shrink-0">
-                      {project.githubUrl && (
-                        <a href={project.githubUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary transition-colors">
-                          <Github className="w-4 h-4" />
-                        </a>
-                      )}
-                      {project.liveDemoUrl && (
-                        <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-secondary transition-colors">
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
+                    <p className="text-muted-foreground text-sm leading-relaxed mb-4 flex-1 line-clamp-3">
+                      {project.description}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {project.techStack.map((tech) => (
+                        <TechBadge key={tech} tech={tech} />
+                      ))}
+                    </div>
+
+                    {/* Click hint */}
+                    <p className="text-xs text-muted-foreground/50 font-mono mt-3 group-hover:text-muted-foreground/80 transition-colors">
+                      Click to view details →
+                    </p>
+                  </GlassCard>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          )}
+
+          {/* Rest of projects — compact */}
+          {rest.length > 0 && (
+            <StaggerContainer className="grid md:grid-cols-3 gap-4">
+              {rest.map((project, i) => (
+                <StaggerItem key={project.id}>
+                  <GlassCard
+                    className="group h-full p-5 flex flex-col cursor-pointer"
+                    glow="secondary"
+                    onClick={() => setSelected(project)}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold group-hover:text-secondary transition-colors line-clamp-1">
+                        {project.title}
+                      </h3>
+                      <div className="flex gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {project.githubUrl && (
+                          <a href={project.githubUrl} target="_blank" rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-primary transition-colors">
+                            <Github className="w-4 h-4" />
+                          </a>
+                        )}
+                        {project.liveDemoUrl && (
+                          <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-secondary transition-colors">
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground text-sm leading-relaxed mb-4 flex-1 line-clamp-3">
+                      {project.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {project.techStack.slice(0, 3).map((tech) => (
+                        <TechBadge key={tech} tech={tech} />
+                      ))}
+                      {project.techStack.length > 3 && (
+                        <span className="text-xs text-muted-foreground px-2 py-1">
+                          +{project.techStack.length - 3}
+                        </span>
                       )}
                     </div>
-                  </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-4 flex-1 line-clamp-3">
-                    {project.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {project.techStack.slice(0, 3).map((tech) => (
-                      <TechBadge key={tech} tech={tech} />
-                    ))}
-                    {project.techStack.length > 3 && (
-                      <span className="text-xs text-muted-foreground px-2 py-1">
-                        +{project.techStack.length - 3}
-                      </span>
-                    )}
-                  </div>
-                </GlassCard>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        )}
-      </div>
-    </section>
+                  </GlassCard>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          )}
+        </div>
+      </section>
+
+      <ProjectModal project={selected} onClose={() => setSelected(null)} />
+    </>
   );
 }
