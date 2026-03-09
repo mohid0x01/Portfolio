@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Code2, ExternalLink } from "lucide-react";
 
 const navLinks = [
-  { href: "#projects", label: "Projects" },
-  { href: "#skills", label: "Skills" },
-  { href: "#contact", label: "Contact" },
+  { href: "#projects",   label: "Projects"   },
+  { href: "#techstack",  label: "Stack"      },
+  { href: "#experience", label: "Experience" },
+  { href: "#skills",     label: "Skills"     },
+  { href: "#contact",    label: "Contact"    },
 ];
 
 export function Navbar() {
