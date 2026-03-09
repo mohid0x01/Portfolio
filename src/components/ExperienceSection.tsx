@@ -139,7 +139,7 @@ export function ExperienceSection() {
                           {item.highlight && <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 flex-shrink-0" />}
                           <h3 className="font-bold text-sm leading-tight">{item.title}</h3>
                         </div>
-                        <p className="text-xs font-mono" style={{ color: item.accentColor }}>{item.org}</p>
+                        <p className="text-xs font-mono text-secondary">{item.org}</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">{item.date}</span>
