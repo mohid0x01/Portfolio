@@ -1,8 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Github, X, Code2, Star, Calendar, Tag } from "lucide-react";
+import {
+  ExternalLink, Github, X, Code2, Star, Calendar,
+  GitFork, AlertCircle, Clock, Eye,
+} from "lucide-react";
 import type { Project } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
+import { useGitHubStats } from "@/hooks/useGitHubStats";
 
 const techColors: Record<string, string> = {
   React: "bg-primary/10 text-primary border-primary/20",
@@ -29,20 +33,96 @@ const techColors: Record<string, string> = {
   default: "bg-muted text-muted-foreground border-border",
 };
 
+function formatRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(months / 12)}y ago`;
+}
+
+function StatSkeleton() {
+  return (
+    <div className="grid grid-cols-4 gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />
+      ))}
+    </div>
+  );
+}
+
+interface GitHubStatsBarProps {
+  githubUrl: string;
+}
+
+function GitHubStatsBar({ githubUrl }: GitHubStatsBarProps) {
+  const { data, isLoading, isError } = useGitHubStats(githubUrl);
+
+  if (isLoading) return <StatSkeleton />;
+  if (isError || !data) return null;
+
+  const stats = [
+    { icon: <Star className="w-3.5 h-3.5 text-yellow-400" />, label: "Stars", value: data.stars.toLocaleString() },
+    { icon: <GitFork className="w-3.5 h-3.5 text-secondary" />, label: "Forks", value: data.forks.toLocaleString() },
+    { icon: <Eye className="w-3.5 h-3.5 text-primary" />, label: "Watchers", value: data.watchers.toLocaleString() },
+    { icon: <AlertCircle className="w-3.5 h-3.5 text-orange-400" />, label: "Issues", value: data.openIssues.toLocaleString() },
+  ];
+
+  return (
+    <div className="space-y-3">
+      {/* Stat chips */}
+      <div className="grid grid-cols-4 gap-3">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="flex flex-col items-center gap-1 p-3 rounded-xl border border-border/40 bg-background/40"
+          >
+            {s.icon}
+            <span className="text-base font-black font-mono">{s.value}</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Meta row: last push + language */}
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-mono">
+        {data.pushedAt && (
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Last push {formatRelativeTime(data.pushedAt)}
+          </span>
+        )}
+        {data.language && (
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+            {data.language}
+          </span>
+        )}
+        {data.topics.slice(0, 4).map((t) => (
+          <span key={t} className="px-2 py-0.5 rounded-full border border-border/50 bg-muted/30">
+            #{t}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface ProjectModalProps {
   project: Project | null;
   onClose: () => void;
 }
 
 export function ProjectModal({ project, onClose }: ProjectModalProps) {
-  // Close on ESC
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Lock body scroll
   useEffect(() => {
     if (project) document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
@@ -88,10 +168,8 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
 
               {/* Hero banner */}
               <div
-                className="w-full h-48 rounded-t-2xl flex items-center justify-center relative overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(var(--secondary) / 0.08))",
-                }}
+                className="w-full h-44 rounded-t-2xl flex items-center justify-center relative overflow-hidden"
+                style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(var(--secondary) / 0.08))" }}
               >
                 <span
                   className="text-[7rem] font-black select-none leading-none"
@@ -99,7 +177,6 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                 >
                   {project.title[0]}
                 </span>
-                {/* Glow */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div
                     className="w-32 h-32 rounded-full blur-3xl opacity-30"
@@ -126,7 +203,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     {project.githubUrl && (
                       <Button asChild size="sm" variant="outline" className="gap-1.5 font-mono text-xs">
                         <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
@@ -143,6 +220,23 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                     )}
                   </div>
                 </div>
+
+                {/* GitHub Live Stats */}
+                {project.githubUrl && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Github className="w-4 h-4 text-primary" />
+                      <h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-muted-foreground">
+                        GitHub Stats
+                      </h3>
+                      <span className="ml-auto text-[10px] font-mono text-muted-foreground/50 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse inline-block" />
+                        live
+                      </span>
+                    </div>
+                    <GitHubStatsBar githubUrl={project.githubUrl} />
+                  </div>
+                )}
 
                 {/* Description */}
                 <div>
@@ -169,7 +263,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                   </div>
                 </div>
 
-                {/* GitHub repo link banner */}
+                {/* Repo link banner */}
                 {project.githubUrl && (
                   <a
                     href={project.githubUrl}
@@ -179,7 +273,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                   >
                     <Github className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-mono font-semibold truncate">{repoName || project.title}</p>
+                      <p className="text-sm font-mono font-semibold truncate">mohidqx / {repoName}</p>
                       <p className="text-xs text-muted-foreground truncate">{project.githubUrl}</p>
                     </div>
                     <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
