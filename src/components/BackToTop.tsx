@@ -27,7 +27,7 @@ export function BackToTop() {
           whileTap={{ scale: 0.92 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
           aria-label="Back to top"
-          className="fixed bottom-8 right-8 z-50 w-11 h-11 rounded-2xl glass flex items-center justify-center border border-primary/30
+          className="fixed bottom-28 right-8 z-[60] w-11 h-11 rounded-2xl glass flex items-center justify-center border border-primary/30
             hover:border-primary/70 transition-colors duration-300"
           style={{
             boxShadow: "0 0 20px hsl(261 87% 50% / 0.35), 0 4px 20px rgba(0,0,0,0.4)",

@@ -160,7 +160,7 @@ export function GhostChatPortal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className={`fixed z-50 flex flex-col overflow-hidden ${
+            className={`fixed z-[70] flex flex-col overflow-hidden ${
               isMaximized ? "inset-4 rounded-2xl" : "bottom-6 right-6 rounded-2xl"
             }`}
             style={{
