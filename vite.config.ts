@@ -17,6 +17,11 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ["react", "react-dom", "framer-motion"],
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "framer-motion"],
+  },
+  optimizeDeps: {
+    // Force Vite to re-bundle deps after firebase removal
+    force: true,
+    include: ["react", "react-dom", "react/jsx-runtime"],
   },
 }));
