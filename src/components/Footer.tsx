@@ -1,4 +1,4 @@
-import { Github, Heart } from "lucide-react";
+import { Github, Heart, Bug } from "lucide-react";
 import { mockProfile } from "@/lib/mockData";
 
 export function Footer() {
@@ -15,7 +15,14 @@ export function Footer() {
           <Heart className="w-3.5 h-3.5 text-destructive mx-1 fill-destructive" />
           and too much coffee.
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <a
+            href="/bug-bounty"
+            className="hover:text-secondary transition-colors flex items-center gap-1.5 font-medium"
+          >
+            <Bug className="w-4 h-4" />
+            Bug Bounty
+          </a>
           <a href={mockProfile.githubUrl} target="_blank" rel="noopener noreferrer"
             className="hover:text-primary transition-colors flex items-center gap-1.5">
             <Github className="w-4 h-4" />

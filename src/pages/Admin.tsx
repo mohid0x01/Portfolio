@@ -32,7 +32,7 @@ import { countryCodeToFlag } from "@/lib/flagEmoji";
 import { supabase } from "@/integrations/supabase/client";
 import { mockProjects } from "@/lib/mockData";
 import type { Project } from "@/lib/schemas";
-import { addDocument, deleteDocument } from "@/lib/firebase";
+// Firebase removed — project management uses local state only
 
 // ── Form Schema ───────────────────────────────────────────────────────────────
 const adminProjectSchema = z.object({
@@ -335,7 +335,7 @@ function ProjectsTab() {
         featured: data.featured ?? false, order: data.order ?? projects.length,
         createdAt: new Date().toISOString(),
       };
-      try { await addDocument("projects", newProject); } catch {}
+      try { /* firebase removed — local state only */ void newProject; } catch {}
       if (editTarget) setProjects((prev) => prev.map((p) => p.id === editTarget.id ? newProject : p));
       else setProjects((prev) => [newProject, ...prev]);
       setSubmitState("success");
@@ -349,7 +349,7 @@ function ProjectsTab() {
   };
 
   const handleDelete = async (id: string) => {
-    try { await deleteDocument("projects", id); } catch {}
+    try { /* firebase removed */ } catch {}
     setProjects((prev) => prev.filter((p) => p.id !== id));
   };
 
