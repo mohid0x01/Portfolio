@@ -115,7 +115,7 @@ export function GhostChatPortal() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => { setIsOpen(true); setUnreadCount(0); }}
-            className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl group"
+            className="fixed bottom-8 right-8 z-[70] w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl group"
             style={{
               background: "linear-gradient(135deg, hsl(261 87% 50%), hsl(261 87% 35%))",
               boxShadow: "0 0 30px hsl(261 87% 50% / 0.4), 0 10px 40px rgba(0,0,0,0.5)",
@@ -160,7 +160,7 @@ export function GhostChatPortal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className={`fixed z-50 flex flex-col overflow-hidden ${
+            className={`fixed z-[70] flex flex-col overflow-hidden ${
               isMaximized ? "inset-4 rounded-2xl" : "bottom-6 right-6 rounded-2xl"
             }`}
             style={{
