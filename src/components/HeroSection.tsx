@@ -204,6 +204,13 @@ export function HeroSection() {
             <ArrowDown className="w-4 h-4" />
           </a>
           <a
+            href="/bug-bounty"
+            className="glass px-8 py-3 rounded-xl font-semibold flex items-center gap-2 hover:border-secondary/40 text-secondary border-secondary/20 transition-all duration-300"
+          >
+            <Shield className="w-4 h-4" />
+            Bug Bounty
+          </a>
+          <a
             href={mockProfile.resumeUrl}
             className="glass px-8 py-3 rounded-xl font-semibold text-foreground flex items-center gap-2 hover:border-primary/30 transition-all duration-300"
           >
