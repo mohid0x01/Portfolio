@@ -89,7 +89,7 @@ export default function BugBountyPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const { error } = await supabase.from("bug_reports").insert({
+      const row = {
         title: data.title,
         description: data.description,
         severity: data.severity,
@@ -100,10 +100,12 @@ export default function BugBountyPage() {
         expected_behavior: data.expected_behavior || null,
         actual_behavior: data.actual_behavior || null,
         proof_of_concept: data.proof_of_concept || null,
-        // Store reporter info in notes since reporter_name/contact aren't DB columns
-        notes: `Reporter: ${data.reporter_name} | Contact: ${data.reporter_contact}`,
+        reporter_name: data.reporter_name,
+        reporter_contact: data.reporter_contact,
         status: "open",
-      });
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("bug_reports").insert(row as any);
       if (error) throw error;
       setSubmitted(true);
     } catch (err) {
