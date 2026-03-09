@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Shield, Trophy, BookOpen, Briefcase, ExternalLink, Star } from "lucide-react";
+import { Shield, Trophy, BookOpen, Briefcase, ExternalLink, Star, Award } from "lucide-react";
 
 interface TimelineItem {
   date: string;
@@ -61,18 +61,21 @@ const TIMELINE: TimelineItem[] = [
 ];
 
 const CERTS = [
-  { name: "Certified Ethical Hacker (CEH v12)", issuer: "EC-Council",      year: "2025", color: "text-secondary",   bg: "bg-secondary/10",   border: "border-secondary/25"   },
-  { name: "Google Cybersecurity Certificate",    issuer: "Coursera / Google", year: "2024", color: "text-blue-400",   bg: "bg-blue-500/10",    border: "border-blue-500/25"    },
-  { name: "Introduction to Dark Web & OSINT",    issuer: "EC-Council CodeRed", year: "2024", color: "text-primary",   bg: "bg-primary/10",     border: "border-primary/25"     },
-  { name: "Ethical Hacking Essentials (EHE)",   issuer: "EC-Council",       year: "2024", color: "text-yellow-400", bg: "bg-yellow-400/10",  border: "border-yellow-400/25"  },
+  { name: "Certified Ethical Hacker (CEH v12)", issuer: "EC-Council",        year: "2025", color: "text-secondary",   bg: "bg-secondary/10",  border: "border-secondary/25"  },
+  { name: "Google Cybersecurity Certificate",   issuer: "Coursera / Google",  year: "2024", color: "text-blue-400",   bg: "bg-blue-500/10",   border: "border-blue-500/25"   },
+  { name: "Introduction to Dark Web & OSINT",   issuer: "EC-Council CodeRed", year: "2024", color: "text-primary",    bg: "bg-primary/10",    border: "border-primary/25"    },
+  { name: "Ethical Hacking Essentials (EHE)",   issuer: "EC-Council",         year: "2024", color: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/25" },
 ];
 
 export function ExperienceSection() {
   return (
-    <section id="experience" className="py-24 px-6 relative">
-      {/* Section divider top */}
+    <section id="experience" className="py-28 px-6 relative overflow-hidden">
+      {/* Dividers */}
       <div className="absolute top-0 left-0 right-0 h-px"
         style={{ background: "linear-gradient(90deg, transparent, hsl(162 72% 46% / 0.3), transparent)" }}
+      />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 60% 50% at 30% 50%, hsl(162 72% 46% / 0.04), transparent)" }}
       />
 
       <div className="container mx-auto max-w-5xl relative z-10">
@@ -82,19 +85,20 @@ export function ExperienceSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <p className="text-secondary font-mono text-sm mb-3 tracking-widest uppercase">
-            // Track Record
-          </p>
-          <h2 className="section-title text-5xl">Experience</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-secondary/20 text-secondary text-xs font-mono tracking-widest uppercase mb-4">
+            <Award className="w-3 h-3" />
+            Track Record
+          </div>
+          <h2 className="section-title text-5xl md:text-6xl mb-4">Experience</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
             Certifications, bug bounty achievements, and projects that define the journey.
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* Timeline — left col */}
+        <div className="grid lg:grid-cols-5 gap-10">
+          {/* Timeline */}
           <div className="lg:col-span-3 space-y-0">
             {TIMELINE.map((item, i) => {
               const Icon = item.icon;
@@ -104,45 +108,48 @@ export function ExperienceSection() {
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
-                  transition={{ delay: i * 0.1, duration: 0.5 }}
-                  className="relative pl-10 pb-10 last:pb-0"
+                  transition={{ delay: i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative pl-12 pb-10 last:pb-0"
                 >
-                  {/* Vertical line */}
+                  {/* Connector line */}
                   {i < TIMELINE.length - 1 && (
                     <div
-                      className="absolute left-[14px] top-8 bottom-0 w-px"
-                      style={{ background: "linear-gradient(to bottom, hsl(var(--border)), transparent)" }}
+                      className="absolute left-[17px] top-9 bottom-0 w-px"
+                      style={{ background: `linear-gradient(to bottom, ${item.accentColor.replace(")", " / 0.4)")}, transparent)` }}
                     />
                   )}
 
-                  {/* Icon dot */}
+                  {/* Icon node */}
                   <motion.div
-                    whileHover={{ scale: 1.2 }}
-                    className="absolute left-0 top-1 w-7 h-7 rounded-full border border-border/40 flex items-center justify-center bg-card"
-                    style={{ boxShadow: `0 0 12px ${item.accentColor.replace(")", " / 0.3)")}` }}
+                    whileHover={{ scale: 1.25 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="absolute left-0 top-1 w-8 h-8 rounded-full border border-border/50 flex items-center justify-center bg-card"
+                    style={{ boxShadow: `0 0 16px ${item.accentColor.replace(")", " / 0.35)")}` }}
                   >
-                    <Icon className="w-3.5 h-3.5 text-foreground/70" />
+                    <Icon className="w-4 h-4 text-foreground/80" />
                   </motion.div>
 
-                  {/* Content */}
+                  {/* Card */}
                   <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className={`glass rounded-2xl p-5 border transition-all duration-300 cursor-default
+                    whileHover={{ x: 6 }}
+                    transition={{ type: "spring", stiffness: 320, damping: 25 }}
+                    className={`glass rounded-2xl p-6 border transition-all duration-300 cursor-default
                       ${item.highlight ? "border-border/30 hover:border-border/60" : "border-border/15 hover:border-border/40"}
-                      hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]`}
-                    style={{ "--item-glow": item.accentColor.replace(")", " / 0.2)") } as React.CSSProperties}
+                      hover:shadow-[0_0_40px_rgba(0,0,0,0.4)]`}
+                    style={{ "--item-glow": item.accentColor.replace(")", " / 0.15)") } as React.CSSProperties}
                   >
-                    <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-start justify-between gap-3 mb-3">
                       <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          {item.highlight && <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 flex-shrink-0" />}
+                        <div className="flex items-center gap-2 mb-1">
+                          {item.highlight && <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 flex-shrink-0" />}
                           <h3 className="font-bold text-sm leading-tight">{item.title}</h3>
                         </div>
-                        <p className="text-xs font-mono text-secondary">{item.org}</p>
+                        <p className="text-xs font-mono" style={{ color: item.accentColor }}>{item.org}</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">{item.date}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                          {item.date}
+                        </span>
                         {item.link && (
                           <a href={item.link} target="_blank" rel="noopener noreferrer"
                             className="text-muted-foreground hover:text-primary transition-colors">
@@ -151,13 +158,13 @@ export function ExperienceSection() {
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-3">{item.description}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4">{item.description}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {item.tags.map((tag) => (
-                        <span key={tag} className="text-[9px] font-mono px-2 py-0.5 rounded-full border"
+                        <span key={tag} className="text-[10px] font-mono px-2.5 py-0.5 rounded-full border"
                           style={{
                             background: item.accentColor.replace(")", " / 0.08)"),
-                            borderColor: item.accentColor.replace(")", " / 0.25)"),
+                            borderColor: item.accentColor.replace(")", " / 0.3)"),
                             color: item.accentColor,
                           }}
                         >
@@ -171,13 +178,15 @@ export function ExperienceSection() {
             })}
           </div>
 
-          {/* Certifications — right col */}
+          {/* Certs sidebar */}
           <div className="lg:col-span-2 space-y-4">
             <div className="sticky top-6">
-              <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-widest font-mono mb-4 flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-5">
                 <Shield className="w-3.5 h-3.5 text-secondary" />
-                Certifications
-              </h3>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                  Certifications
+                </span>
+              </div>
               <div className="space-y-3">
                 {CERTS.map((cert, i) => (
                   <motion.div
@@ -185,12 +194,12 @@ export function ExperienceSection() {
                     initial={{ opacity: 0, x: 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    whileHover={{ scale: 1.02, x: -2 }}
+                    transition={{ delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ scale: 1.02, x: -3 }}
                     className={`glass rounded-xl p-4 border ${cert.border} transition-all duration-300
-                      hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]`}
+                      hover:shadow-[0_0_20px_rgba(0,0,0,0.35)]`}
                   >
-                    <div className={`inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded-full ${cert.bg} ${cert.color} mb-2`}>
+                    <div className={`inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-0.5 rounded-full ${cert.bg} ${cert.color} mb-2`}>
                       <Shield className="w-2.5 h-2.5" />
                       {cert.year}
                     </div>
@@ -200,28 +209,31 @@ export function ExperienceSection() {
                 ))}
               </div>
 
-              {/* CTF badge */}
+              {/* CTF Stats card */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.5 }}
                 whileHover={{ scale: 1.02 }}
-                className="mt-4 glass rounded-xl p-4 border border-primary/20 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_24px_hsl(261_87%_50%_/_0.2)]"
+                className="mt-4 glass rounded-xl p-5 border border-primary/20 transition-all duration-300
+                  hover:border-primary/40 hover:shadow-[0_0_30px_hsl(261_87%_50%_/_0.2)]"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy className="w-4 h-4 text-yellow-400" />
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-lg bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center">
+                    <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+                  </div>
                   <span className="text-xs font-bold">CTF & Bug Bounty</span>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   {[
-                    { label: "Bugs Reported", value: "50+" },
-                    { label: "Active Platforms", value: "3" },
-                    { label: "CTFs Competed", value: "10+" },
-                  ].map(({ label, value }) => (
+                    { label: "Bugs Reported", value: "50+", color: "text-secondary" },
+                    { label: "Active Platforms", value: "3", color: "text-primary" },
+                    { label: "CTFs Competed", value: "10+", color: "text-yellow-400" },
+                  ].map(({ label, value, color }) => (
                     <div key={label} className="flex justify-between items-center">
-                      <span className="text-[10px] text-muted-foreground">{label}</span>
-                      <span className="text-xs font-bold gradient-text">{value}</span>
+                      <span className="text-[11px] text-muted-foreground">{label}</span>
+                      <span className={`text-sm font-bold ${color}`}>{value}</span>
                     </div>
                   ))}
                 </div>
