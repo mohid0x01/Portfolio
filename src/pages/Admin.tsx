@@ -184,14 +184,14 @@ function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange:
   }
 
   const quickStats = [
-    { label: "Total Projects",  value: projects.length,                              icon: Layers,       color: "text-primary",           bg: "bg-primary/10",      tab: "projects"  as TabId },
-    { label: "Featured Works",  value: projects.filter((p) => p.featured).length,    icon: Star,         color: "text-yellow-400",        bg: "bg-yellow-400/10",   tab: "projects"  as TabId },
-    { label: "Visitor Intel",   value: "Live",                                        icon: Eye,          color: "text-secondary",         bg: "bg-secondary/10",    tab: "visitors"  as TabId },
-    { label: "Activity Logs",   value: "Live",                                        icon: Activity,     color: "text-blue-400",          bg: "bg-blue-500/10",     tab: "activity"  as TabId },
-    { label: "Security",        value: "Live",                                        icon: Shield,       color: "text-destructive",       bg: "bg-destructive/10",  tab: "security"  as TabId },
-    { label: "Audit Trail",     value: "Live",                                        icon: BookOpen,     color: "text-secondary",         bg: "bg-secondary/10",    tab: "audit"     as TabId },
-    { label: "System Health",   value: "98%",                                         icon: Server,       color: "text-secondary",         bg: "bg-secondary/10",    tab: "health"    as TabId },
-    { label: "Analytics",       value: "7d",                                          icon: BarChart3,    color: "text-primary",           bg: "bg-primary/10",      tab: "analytics" as TabId },
+    { label: "Total Projects",  value: projects.length,                              icon: Layers,       color: "text-primary",           bg: "bg-primary/10",      tab: "projects"  as TabId, glow: "hsl(261 87% 50% / 0.35)",  border: "hsl(261 87% 50% / 0.4)"  },
+    { label: "Featured Works",  value: projects.filter((p) => p.featured).length,    icon: Star,         color: "text-yellow-400",        bg: "bg-yellow-400/10",   tab: "projects"  as TabId, glow: "hsl(48 96% 53% / 0.35)",   border: "hsl(48 96% 53% / 0.4)"   },
+    { label: "Visitor Intel",   value: "Live",                                        icon: Eye,          color: "text-secondary",         bg: "bg-secondary/10",    tab: "visitors"  as TabId, glow: "hsl(162 72% 46% / 0.35)",  border: "hsl(162 72% 46% / 0.4)"  },
+    { label: "Activity Logs",   value: "Live",                                        icon: Activity,     color: "text-blue-400",          bg: "bg-blue-500/10",     tab: "activity"  as TabId, glow: "hsl(217 91% 60% / 0.35)",  border: "hsl(217 91% 60% / 0.4)"  },
+    { label: "Security",        value: "Live",                                        icon: Shield,       color: "text-destructive",       bg: "bg-destructive/10",  tab: "security"  as TabId, glow: "hsl(0 72% 51% / 0.35)",    border: "hsl(0 72% 51% / 0.4)"    },
+    { label: "Audit Trail",     value: "Live",                                        icon: BookOpen,     color: "text-secondary",         bg: "bg-secondary/10",    tab: "audit"     as TabId, glow: "hsl(162 72% 46% / 0.35)",  border: "hsl(162 72% 46% / 0.4)"  },
+    { label: "System Health",   value: "98%",                                         icon: Server,       color: "text-secondary",         bg: "bg-secondary/10",    tab: "health"    as TabId, glow: "hsl(162 72% 46% / 0.35)",  border: "hsl(162 72% 46% / 0.4)"  },
+    { label: "Analytics",       value: "7d",                                          icon: BarChart3,    color: "text-primary",           bg: "bg-primary/10",      tab: "analytics" as TabId, glow: "hsl(261 87% 50% / 0.35)",  border: "hsl(261 87% 50% / 0.4)"  },
   ];
 
   return (
@@ -203,23 +203,29 @@ function Overview({ projects, onTabChange }: { projects: Project[]; onTabChange:
 
       {/* Quick stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {quickStats.map(({ label, value, icon: Icon, color, bg, tab }, i) => (
+        {quickStats.map(({ label, value, icon: Icon, color, bg, tab, glow, border }, i) => (
           <motion.button
             key={label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
+            whileHover={{ scale: 1.045, y: -3 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => onTabChange(tab)}
-            className="glass rounded-2xl p-4 text-left border border-border/20 hover:border-primary/30 transition-all group hover:scale-[1.02]"
+            style={{"--card-glow": glow, "--card-border": border} as React.CSSProperties}
+            className="glass rounded-2xl p-4 text-left border border-border/20 transition-all duration-300 group
+              hover:border-[var(--card-border)]
+              hover:shadow-[0_0_32px_var(--card-glow),0_8px_24px_rgba(0,0,0,0.4)]
+              hover:bg-[var(--card-glow)]"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center`}>
-                <Icon className={`w-4 h-4 ${color}`} />
+              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
+                <Icon className={`w-4 h-4 ${color} transition-all duration-300 group-hover:drop-shadow-lg`} />
               </div>
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-300" />
             </div>
-            <div className="text-2xl font-black mb-0.5">{value}</div>
-            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="text-2xl font-black mb-0.5 transition-all duration-300 group-hover:text-foreground">{value}</div>
+            <div className="text-xs text-muted-foreground transition-colors duration-300 group-hover:text-foreground/70">{label}</div>
           </motion.button>
         ))}
       </div>

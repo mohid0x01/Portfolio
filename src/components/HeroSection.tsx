@@ -1,7 +1,69 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Github, Linkedin, Twitter, Mail, Download, ArrowDown, Shield } from "lucide-react";
 import { mockProfile, mockStats } from "@/lib/mockData";
 import mohidAvatar from "@/assets/mohid-avatar.png";
+import { useState, useEffect } from "react";
+
+const ROLES = [
+  "Certified Ethical Hacker",
+  "Bug Bounty Hunter",
+  "Security Researcher",
+  "OSINT Specialist",
+  "Penetration Tester",
+];
+
+function TypewriterText() {
+  const [roleIndex, setRoleIndex] = useState(0);
+  const [displayed, setDisplayed] = useState("");
+  const [phase, setPhase] = useState<"typing" | "pause" | "erasing">("typing");
+  const [charIndex, setCharIndex] = useState(0);
+
+  useEffect(() => {
+    const current = ROLES[roleIndex];
+
+    if (phase === "typing") {
+      if (charIndex < current.length) {
+        const t = setTimeout(() => {
+          setDisplayed(current.slice(0, charIndex + 1));
+          setCharIndex((c) => c + 1);
+        }, 55);
+        return () => clearTimeout(t);
+      } else {
+        const t = setTimeout(() => setPhase("pause"), 1800);
+        return () => clearTimeout(t);
+      }
+    }
+
+    if (phase === "pause") {
+      const t = setTimeout(() => setPhase("erasing"), 400);
+      return () => clearTimeout(t);
+    }
+
+    if (phase === "erasing") {
+      if (charIndex > 0) {
+        const t = setTimeout(() => {
+          setDisplayed(current.slice(0, charIndex - 1));
+          setCharIndex((c) => c - 1);
+        }, 28);
+        return () => clearTimeout(t);
+      } else {
+        setRoleIndex((r) => (r + 1) % ROLES.length);
+        setPhase("typing");
+      }
+    }
+  }, [phase, charIndex, roleIndex]);
+
+  return (
+    <span className="gradient-text inline-flex items-center gap-0.5">
+      <span>{displayed}</span>
+      <motion.span
+        animate={{ opacity: [1, 0] }}
+        transition={{ duration: 0.55, repeat: Infinity, repeatType: "reverse" }}
+        className="inline-block w-0.5 h-[1em] bg-primary ml-0.5 rounded-full align-middle"
+      />
+    </span>
+  );
+}
 
 export function HeroSection() {
   const statIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -105,15 +167,15 @@ export function HeroSection() {
           <span className="gradient-text">{mockProfile.name}</span>
         </motion.h1>
 
-        {/* Tagline */}
-        <motion.p
+        {/* Tagline — typewriter */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="text-xl md:text-2xl text-muted-foreground mb-4 font-light"
+          className="text-xl md:text-2xl mb-4 font-light min-h-[2rem] flex items-center justify-center"
         >
-          {mockProfile.tagline}
-        </motion.p>
+          <TypewriterText />
+        </motion.div>
 
         {/* Bio */}
         <motion.p
