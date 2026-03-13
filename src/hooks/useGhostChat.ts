@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { encryptMessage, decryptMessage, isEncrypted } from "@/lib/ghostCrypto";
 
 export function useGhostAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -73,7 +74,7 @@ export type GhostRoom = {
   created_at: string;
 };
 
-export function useGhostChat(roomId: string | null, userId: string | null) {
+export function useGhostChat(roomId: string | null, userId: string | null, inviteCode?: string | null) {
   const [messages, setMessages] = useState<GhostMessage[]>([]);
   const [members, setMembers] = useState<GhostMember[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -100,16 +101,29 @@ export function useGhostChat(roomId: string | null, userId: string | null) {
         (membersData || []).map((m) => [m.user_id, m])
       );
 
-      setMessages(
-        data.map((msg) => ({
-          ...msg,
-          reactions: (msg.reactions as Record<string, string[]>) || {},
-          sender_codename: memberMap.get(msg.sender_id)?.codename || "GHOST",
-          sender_color: memberMap.get(msg.sender_id)?.avatar_color || "#6610F2",
-        }))
+      // Decrypt messages if we have the invite code (E2E)
+      const decrypted = await Promise.all(
+        data.map(async (msg) => {
+          let displayContent = msg.content;
+          // Try to decrypt from encrypted_content first, fallback to content
+          const encrypted = msg.encrypted_content || (msg.content && inviteCode && isEncrypted(msg.content) ? msg.content : null);
+          if (encrypted && inviteCode && msg.message_type === "text") {
+            const plain = await decryptMessage(encrypted, inviteCode);
+            if (plain !== null) displayContent = plain;
+          }
+          return {
+            ...msg,
+            content: displayContent,
+            reactions: (msg.reactions as Record<string, string[]>) || {},
+            sender_codename: memberMap.get(msg.sender_id)?.codename || "GHOST",
+            sender_color: memberMap.get(msg.sender_id)?.avatar_color || "#6610F2",
+          };
+        })
       );
+
+      setMessages(decrypted);
     }
-  }, [roomId]);
+  }, [roomId, inviteCode]);
 
   const fetchMembers = useCallback(async () => {
     if (!roomId) return;
@@ -189,10 +203,19 @@ export function useGhostChat(roomId: string | null, userId: string | null) {
       ? new Date(Date.now() + opts.selfDestruct * 1000).toISOString()
       : null;
 
+    // Encrypt if invite code is available (E2E)
+    let storedContent = content.trim();
+    let encryptedContent: string | null = null;
+    if (inviteCode) {
+      encryptedContent = await encryptMessage(content.trim(), inviteCode);
+      storedContent = "[E2E ENCRYPTED]"; // plaintext placeholder (won't be shown, encrypted_content takes precedence)
+    }
+
     await supabase.from("ghost_messages").insert({
       room_id: roomId,
       sender_id: userId,
-      content: content.trim(),
+      content: storedContent,
+      encrypted_content: encryptedContent,
       message_type: "text",
       self_destruct_at,
       reply_to: opts?.replyTo || null,
@@ -343,10 +366,11 @@ export function useGhostRooms(userId: string | null) {
 
   const joinRoom = async (inviteCode: string, codename: string) => {
     if (!userId) return null;
-    const { data: room } = await supabase
+    // Try exact match first, then case-insensitive (ilike)
+    let { data: room } = await supabase
       .from("ghost_rooms")
       .select("*")
-      .eq("invite_code", inviteCode)
+      .ilike("invite_code", inviteCode.trim())
       .eq("is_active", true)
       .single();
     if (!room) return null;

@@ -28,6 +28,7 @@ export function GhostChatPortal() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState<GhostRoom | null>(null);
+  const [selectedRoomInviteCode, setSelectedRoomInviteCode] = useState<string | null>(null);
   const [myCodename, setMyCodename] = useState("GHOST");
   const [pulseCount, setPulseCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -69,24 +70,45 @@ export function GhostChatPortal() {
   }, [isOpen, user]);
 
   const handleAuthenticated = (userId: string) => {
-    setUser({ id: userId } as User);
+    // Re-fetch the full session so we get a proper User object
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        // Restore codename from localStorage
+        const saved = localStorage.getItem(`ghost_codename_${session.user.id}`);
+        if (saved) setMyCodename(saved);
+      } else {
+        setUser({ id: userId } as User);
+      }
+    });
   };
 
   const handleSelectRoom = async (room: GhostRoom) => {
     setSelectedRoom(room);
+    setSelectedRoomInviteCode(room.invite_code);
     setUnreadCount(0);
     if (user) {
+      // Try to get codename from membership record
       const { data } = await supabase
         .from("ghost_members")
         .select("codename")
         .eq("room_id", room.id)
         .eq("user_id", user.id)
         .single();
-      if (data) setMyCodename(data.codename);
+      if (data) {
+        setMyCodename(data.codename);
+      } else {
+        // Fall back to localStorage
+        const saved = localStorage.getItem(`ghost_codename_${user.id}`);
+        if (saved) setMyCodename(saved);
+      }
     }
   };
 
   const handleSignOut = async () => {
+    if (user) {
+      localStorage.removeItem(`ghost_codename_${user.id}`);
+    }
     await supabase.auth.signOut();
     setUser(null);
     setSelectedRoom(null);
@@ -336,6 +358,7 @@ export function GhostChatPortal() {
                               roomId={selectedRoom.id}
                               roomName={selectedRoom.name}
                               userId={user.id}
+                              inviteCode={selectedRoomInviteCode}
                             />
                           ) : (
                             <ChatEmptyState onSwitchToBugBounty={() => setActiveTab("bugbounty")} />
@@ -374,7 +397,7 @@ export function GhostChatPortal() {
               </span>
               <span className="ml-auto flex items-center gap-2">
                 <Lock className="w-3 h-3 text-secondary/60" />
-                <span>{user ? `● ${user.email?.split("@")[0].toUpperCase()}` : "○ OFFLINE"}</span>
+                <span>{user ? `● ${myCodename}` : "○ OFFLINE"}</span>
               </span>
             </div>
           </motion.div>

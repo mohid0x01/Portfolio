@@ -31,7 +31,11 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
   const [mode, setMode] = useState<null | "create" | "join">(null);
   const [roomName, setRoomName] = useState("");
   const [roomDesc, setRoomDesc] = useState("");
-  const [codename, setCodename] = useState(randomCodename());
+  // Pre-fill codename from localStorage (set during anonymous auth)
+  const [codename, setCodename] = useState(() => {
+    const saved = localStorage.getItem(`ghost_codename_${userId}`);
+    return saved || randomCodename();
+  });
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
