@@ -101,16 +101,29 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
         (membersData || []).map((m) => [m.user_id, m])
       );
 
-      setMessages(
-        data.map((msg) => ({
-          ...msg,
-          reactions: (msg.reactions as Record<string, string[]>) || {},
-          sender_codename: memberMap.get(msg.sender_id)?.codename || "GHOST",
-          sender_color: memberMap.get(msg.sender_id)?.avatar_color || "#6610F2",
-        }))
+      // Decrypt messages if we have the invite code (E2E)
+      const decrypted = await Promise.all(
+        data.map(async (msg) => {
+          let displayContent = msg.content;
+          // Try to decrypt from encrypted_content first, fallback to content
+          const encrypted = msg.encrypted_content || (msg.content && inviteCode && isEncrypted(msg.content) ? msg.content : null);
+          if (encrypted && inviteCode && msg.message_type === "text") {
+            const plain = await decryptMessage(encrypted, inviteCode);
+            if (plain !== null) displayContent = plain;
+          }
+          return {
+            ...msg,
+            content: displayContent,
+            reactions: (msg.reactions as Record<string, string[]>) || {},
+            sender_codename: memberMap.get(msg.sender_id)?.codename || "GHOST",
+            sender_color: memberMap.get(msg.sender_id)?.avatar_color || "#6610F2",
+          };
+        })
       );
+
+      setMessages(decrypted);
     }
-  }, [roomId]);
+  }, [roomId, inviteCode]);
 
   const fetchMembers = useCallback(async () => {
     if (!roomId) return;
