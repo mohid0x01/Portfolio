@@ -675,14 +675,15 @@ interface GhostChatWindowProps {
   roomId: string;
   roomName: string;
   userId: string;
+  inviteCode?: string | null;
   onClose?: () => void;
 }
 
-export function GhostChatWindow({ roomId, roomName, userId, onClose }: GhostChatWindowProps) {
+export function GhostChatWindow({ roomId, roomName, userId, inviteCode, onClose }: GhostChatWindowProps) {
   const {
     messages, members, typingUsers, loading,
     sendMessage, sendFile, deleteMessage, addReaction, setTyping, markOnline
-  } = useGhostChat(roomId, userId);
+  } = useGhostChat(roomId, userId, inviteCode);
 
   const [input, setInput] = useState("");
   const [replyTo, setReplyTo] = useState<GhostMessage | null>(null);
