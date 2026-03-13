@@ -203,10 +203,19 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
       ? new Date(Date.now() + opts.selfDestruct * 1000).toISOString()
       : null;
 
+    // Encrypt if invite code is available (E2E)
+    let storedContent = content.trim();
+    let encryptedContent: string | null = null;
+    if (inviteCode) {
+      encryptedContent = await encryptMessage(content.trim(), inviteCode);
+      storedContent = "[E2E ENCRYPTED]"; // plaintext placeholder (won't be shown, encrypted_content takes precedence)
+    }
+
     await supabase.from("ghost_messages").insert({
       room_id: roomId,
       sender_id: userId,
-      content: content.trim(),
+      content: storedContent,
+      encrypted_content: encryptedContent,
       message_type: "text",
       self_destruct_at,
       reply_to: opts?.replyTo || null,
