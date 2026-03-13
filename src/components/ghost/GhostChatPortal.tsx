@@ -86,13 +86,20 @@ export function GhostChatPortal() {
     setSelectedRoom(room);
     setUnreadCount(0);
     if (user) {
+      // Try to get codename from membership record
       const { data } = await supabase
         .from("ghost_members")
         .select("codename")
         .eq("room_id", room.id)
         .eq("user_id", user.id)
         .single();
-      if (data) setMyCodename(data.codename);
+      if (data) {
+        setMyCodename(data.codename);
+      } else {
+        // Fall back to localStorage
+        const saved = localStorage.getItem(`ghost_codename_${user.id}`);
+        if (saved) setMyCodename(saved);
+      }
     }
   };
 
