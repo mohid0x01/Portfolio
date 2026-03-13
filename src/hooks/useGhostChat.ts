@@ -343,10 +343,11 @@ export function useGhostRooms(userId: string | null) {
 
   const joinRoom = async (inviteCode: string, codename: string) => {
     if (!userId) return null;
-    const { data: room } = await supabase
+    // Try exact match first, then case-insensitive (ilike)
+    let { data: room } = await supabase
       .from("ghost_rooms")
       .select("*")
-      .eq("invite_code", inviteCode)
+      .ilike("invite_code", inviteCode.trim())
       .eq("is_active", true)
       .single();
     if (!room) return null;
