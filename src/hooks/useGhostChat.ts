@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { encryptMessage, decryptMessage, isEncrypted } from "@/lib/ghostCrypto";
 
 export function useGhostAuth() {
   const [user, setUser] = useState<User | null>(null);
