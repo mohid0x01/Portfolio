@@ -233,6 +233,7 @@ export type Database = {
       }
       ghost_rooms: {
         Row: {
+          channel_emoji: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -244,6 +245,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          channel_emoji?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -255,6 +257,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          channel_emoji?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
