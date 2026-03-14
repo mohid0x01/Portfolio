@@ -2,8 +2,8 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, LogIn, Copy, Check, Hash, LogOut, Terminal,
-  ChevronRight, Search, Bell, BellOff, Trash2, Settings,
-  Star, Users, Lock, Globe, RefreshCw, X, Shield, Zap, Eye
+  Search, Bell, BellOff, Trash2,
+  Star, Users, RefreshCw, X, Zap, Eye
 } from "lucide-react";
 import { useGhostRooms, type GhostRoom } from "@/hooks/useGhostChat";
 
@@ -13,6 +13,7 @@ interface GhostRoomListProps {
   onSelectRoom: (room: GhostRoom) => void;
   onSignOut: () => void;
   myCodename: string;
+  onRoomLeft?: () => void;
 }
 
 const HACKER_CODENAMES = [
@@ -22,16 +23,17 @@ const HACKER_CODENAMES = [
   "STYX", "NOVA", "VORTEX", "ENTROPY", "MIRAGE", "BLAZE", "ATLAS"
 ];
 
+const CHANNEL_EMOJIS = ["👻", "🔥", "💀", "🕵️", "⚡", "🛡️", "🌐", "🚀", "💣", "🎯", "🗡️", "🌙", "☠️", "🤖", "🦾", "🔐", "🎭", "🏴‍☠️"];
+
 function randomCodename() {
   return HACKER_CODENAMES[Math.floor(Math.random() * HACKER_CODENAMES.length)];
 }
 
-export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut, myCodename }: GhostRoomListProps) {
-  const { rooms, myMemberships, createRoom, joinRoom, fetchRooms } = useGhostRooms(userId);
+export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut, myCodename, onRoomLeft }: GhostRoomListProps) {
+  const { rooms, myMemberships, createRoom, joinRoom, leaveRoom, updateRoomEmoji, fetchRooms } = useGhostRooms(userId);
   const [mode, setMode] = useState<null | "create" | "join">(null);
   const [roomName, setRoomName] = useState("");
   const [roomDesc, setRoomDesc] = useState("");
-  // Pre-fill codename from localStorage (set during anonymous auth)
   const [codename, setCodename] = useState(() => {
     const saved = localStorage.getItem(`ghost_codename_${userId}`);
     return saved || randomCodename();
@@ -47,6 +49,8 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
   const [refreshing, setRefreshing] = useState(false);
   const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
   const [showInviteFor, setShowInviteFor] = useState<string | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState<string | null>(null);
+  const [emojiPickerFor, setEmojiPickerFor] = useState<string | null>(null);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +85,12 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
       setError("INVALID CODE OR CHANNEL OFFLINE");
     }
     setLoading(false);
+  };
+
+  const handleLeaveRoom = async (roomId: string) => {
+    await leaveRoom(roomId);
+    setConfirmLeave(null);
+    if (selectedRoomId === roomId) onRoomLeft?.();
   };
 
   const copyInvite = async (code: string, e?: React.MouseEvent) => {
@@ -172,7 +182,7 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
           <div className="w-2 h-2 rounded-full bg-secondary animate-pulse flex-shrink-0" title="Online" />
         </div>
 
-        {/* Search bar */}
+        {/* Search */}
         <AnimatePresence>
           {showSearch && (
             <motion.div
@@ -238,12 +248,20 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
                 isFav={true}
                 copiedCode={copiedCode}
                 showInvite={showInviteFor === room.id}
+                confirmLeave={confirmLeave === room.id}
+                emojiPickerOpen={emojiPickerFor === room.id}
                 onSelect={() => onSelectRoom(room)}
                 onHover={(id) => setHoveredRoom(id)}
                 onCopy={copyInvite}
                 onMute={toggleMute}
                 onFav={toggleFav}
                 onShowInvite={(id, e) => { e.stopPropagation(); setShowInviteFor(showInviteFor === id ? null : id); }}
+                onLeave={(id, e) => { e.stopPropagation(); setConfirmLeave(confirmLeave === id ? null : id); }}
+                onConfirmLeave={() => handleLeaveRoom(room.id)}
+                onCancelLeave={() => setConfirmLeave(null)}
+                onEmojiPicker={(id, e) => { e.stopPropagation(); setEmojiPickerFor(emojiPickerFor === id ? null : id); }}
+                onEmojiSelect={(emoji) => { updateRoomEmoji(room.id, emoji); setEmojiPickerFor(null); }}
+                isCreator={room.created_by === userId}
               />
             ))}
             <div className="h-px bg-border/20 mx-2 my-2" />
@@ -268,12 +286,20 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
               isFav={false}
               copiedCode={copiedCode}
               showInvite={showInviteFor === room.id}
+              confirmLeave={confirmLeave === room.id}
+              emojiPickerOpen={emojiPickerFor === room.id}
               onSelect={() => onSelectRoom(room)}
               onHover={(id) => setHoveredRoom(id)}
               onCopy={copyInvite}
               onMute={toggleMute}
               onFav={toggleFav}
               onShowInvite={(id, e) => { e.stopPropagation(); setShowInviteFor(showInviteFor === id ? null : id); }}
+              onLeave={(id, e) => { e.stopPropagation(); setConfirmLeave(confirmLeave === id ? null : id); }}
+              onConfirmLeave={() => handleLeaveRoom(room.id)}
+              onCancelLeave={() => setConfirmLeave(null)}
+              onEmojiPicker={(id, e) => { e.stopPropagation(); setEmojiPickerFor(emojiPickerFor === id ? null : id); }}
+              onEmojiSelect={(emoji) => { updateRoomEmoji(room.id, emoji); setEmojiPickerFor(null); }}
+              isCreator={room.created_by === userId}
             />
           ))}
         </div>
@@ -365,7 +391,7 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
                   />
                 )}
 
-                {/* Codename with randomize */}
+                {/* Codename */}
                 <div className="relative">
                   <input
                     type="text"
@@ -421,7 +447,8 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
 // Room item component
 function RoomItem({
   room, membership, isSelected, isHovered, isMuted, isFav, copiedCode,
-  showInvite, onSelect, onHover, onCopy, onMute, onFav, onShowInvite
+  showInvite, confirmLeave, emojiPickerOpen, onSelect, onHover, onCopy, onMute, onFav, onShowInvite,
+  onLeave, onConfirmLeave, onCancelLeave, onEmojiPicker, onEmojiSelect, isCreator,
 }: {
   room: GhostRoom;
   membership: any;
@@ -431,12 +458,20 @@ function RoomItem({
   isFav: boolean;
   copiedCode: string | null;
   showInvite: boolean;
+  confirmLeave: boolean;
+  emojiPickerOpen: boolean;
   onSelect: () => void;
   onHover: (id: string | null) => void;
   onCopy: (code: string, e?: React.MouseEvent) => void;
   onMute: (id: string, e: React.MouseEvent) => void;
   onFav: (id: string, e: React.MouseEvent) => void;
   onShowInvite: (id: string, e: React.MouseEvent) => void;
+  onLeave: (id: string, e: React.MouseEvent) => void;
+  onConfirmLeave: () => void;
+  onCancelLeave: () => void;
+  onEmojiPicker: (id: string, e: React.MouseEvent) => void;
+  onEmojiSelect: (emoji: string) => void;
+  isCreator: boolean;
 }) {
   return (
     <div className="relative">
@@ -450,18 +485,20 @@ function RoomItem({
             : "border border-transparent hover:bg-white/5 hover:border-border/20"
         }`}
       >
+        {/* Channel emoji/avatar */}
         <div
-          className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 font-black font-mono text-sm border ${
+          className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 font-black font-mono text-sm border cursor-pointer relative ${
             isSelected ? "border-primary/40" : "border-border/30"
           }`}
           style={{
             background: isSelected
               ? "linear-gradient(135deg, hsl(261 87% 50% / 0.2), hsl(261 87% 40% / 0.1))"
               : "rgba(255,255,255,0.04)",
-            color: membership?.avatar_color || "hsl(var(--primary))"
           }}
+          onClick={(e) => { if (isCreator) { e.stopPropagation(); onEmojiPicker(room.id, e); } }}
+          title={isCreator ? "Change channel icon" : undefined}
         >
-          {room.name[0]}
+          <span className="text-base">{(room as any).channel_emoji || "👻"}</span>
         </div>
 
         <div className="flex-1 min-w-0">
@@ -499,10 +536,71 @@ function RoomItem({
           >
             <Eye className="w-3 h-3" />
           </button>
+          <button
+            onClick={(e) => onLeave(room.id, e)}
+            className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+            title="Leave channel"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
         </div>
 
         {isSelected && <div className="w-1 h-6 rounded-full bg-primary flex-shrink-0" />}
       </button>
+
+      {/* Emoji picker */}
+      <AnimatePresence>
+        {emojiPickerOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mx-2 mb-1"
+          >
+            <div className="grid grid-cols-6 gap-1 px-2 py-2 rounded-xl bg-white/5 border border-border/30">
+              {CHANNEL_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={(e) => { e.stopPropagation(); onEmojiSelect(emoji); }}
+                  className="text-base hover:scale-125 transition-transform p-1 rounded hover:bg-white/10 text-center"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirm leave */}
+      <AnimatePresence>
+        {confirmLeave && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mx-2 mb-1"
+          >
+            <div className="px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20">
+              <p className="text-xs text-destructive font-mono mb-2">LEAVE THIS CHANNEL?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onConfirmLeave(); }}
+                  className="flex-1 py-1.5 rounded-lg bg-destructive/20 text-destructive text-xs font-bold hover:bg-destructive/30 transition-colors"
+                >
+                  LEAVE
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onCancelLeave(); }}
+                  className="flex-1 py-1.5 rounded-lg bg-white/5 text-muted-foreground text-xs font-bold hover:bg-white/10 transition-colors"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Invite code panel */}
       <AnimatePresence>
