@@ -48,9 +48,9 @@ export type GhostMessage = {
   reply_to: string | null;
   reactions: Record<string, string[]>;
   created_at: string;
-  // joined from ghost_members
   sender_codename?: string;
   sender_color?: string;
+  read_by?: string[]; // user_ids who have read this message
 };
 
 export type GhostMember = {
@@ -72,6 +72,7 @@ export type GhostRoom = {
   created_by: string | null;
   is_active: boolean;
   created_at: string;
+  channel_emoji?: string | null;
 };
 
 export function useGhostChat(roomId: string | null, userId: string | null, inviteCode?: string | null) {
@@ -79,7 +80,37 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
   const [members, setMembers] = useState<GhostMember[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [readReceipts, setReadReceipts] = useState<Record<string, string[]>>({});
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+
+  const fetchReadReceipts = useCallback(async () => {
+    if (!roomId) return;
+    // Get all read receipts for messages in this room
+    const { data: roomMessages } = await supabase
+      .from("ghost_messages")
+      .select("id")
+      .eq("room_id", roomId)
+      .limit(200);
+
+    if (!roomMessages || roomMessages.length === 0) return;
+
+    const messageIds = roomMessages.map(m => m.id);
+    const { data: receipts } = await supabase
+      .from("ghost_read_receipts")
+      .select("message_id, user_id")
+      .in("message_id", messageIds);
+
+    if (receipts) {
+      const map: Record<string, string[]> = {};
+      receipts.forEach(r => {
+        if (!map[r.message_id]) map[r.message_id] = [];
+        if (!map[r.message_id].includes(r.user_id)) {
+          map[r.message_id].push(r.user_id);
+        }
+      });
+      setReadReceipts(map);
+    }
+  }, [roomId]);
 
   const fetchMessages = useCallback(async () => {
     if (!roomId) return;
@@ -101,11 +132,9 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
         (membersData || []).map((m) => [m.user_id, m])
       );
 
-      // Decrypt messages if we have the invite code (E2E)
       const decrypted = await Promise.all(
         data.map(async (msg) => {
           let displayContent = msg.content;
-          // Try to decrypt from encrypted_content first, fallback to content
           const encrypted = msg.encrypted_content || (msg.content && inviteCode && isEncrypted(msg.content) ? msg.content : null);
           if (encrypted && inviteCode && msg.message_type === "text") {
             const plain = await decryptMessage(encrypted, inviteCode);
@@ -117,13 +146,14 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
             reactions: (msg.reactions as Record<string, string[]>) || {},
             sender_codename: memberMap.get(msg.sender_id)?.codename || "GHOST",
             sender_color: memberMap.get(msg.sender_id)?.avatar_color || "#6610F2",
+            read_by: readReceipts[msg.id] || [],
           };
         })
       );
 
       setMessages(decrypted);
     }
-  }, [roomId, inviteCode]);
+  }, [roomId, inviteCode, readReceipts]);
 
   const fetchMembers = useCallback(async () => {
     if (!roomId) return;
@@ -137,9 +167,8 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
   useEffect(() => {
     if (!roomId || !userId) return;
     setLoading(true);
-    Promise.all([fetchMessages(), fetchMembers()]).then(() => setLoading(false));
+    Promise.all([fetchMessages(), fetchMembers(), fetchReadReceipts()]).then(() => setLoading(false));
 
-    // Realtime: messages
     const msgChannel = supabase
       .channel(`ghost_messages_${roomId}`)
       .on(
@@ -149,7 +178,6 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
       )
       .subscribe();
 
-    // Realtime: members
     const memberChannel = supabase
       .channel(`ghost_members_${roomId}`)
       .on(
@@ -159,7 +187,6 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
       )
       .subscribe();
 
-    // Realtime: typing
     const typingChannel = supabase
       .channel(`ghost_typing_${roomId}`)
       .on(
@@ -187,12 +214,22 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
       )
       .subscribe();
 
+    const receiptChannel = supabase
+      .channel(`ghost_receipts_${roomId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "ghost_read_receipts" },
+        () => fetchReadReceipts()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(msgChannel);
       supabase.removeChannel(memberChannel);
       supabase.removeChannel(typingChannel);
+      supabase.removeChannel(receiptChannel);
     };
-  }, [roomId, userId, fetchMessages, fetchMembers]);
+  }, [roomId, userId, fetchMessages, fetchMembers, fetchReadReceipts]);
 
   const sendMessage = async (
     content: string,
@@ -203,12 +240,11 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
       ? new Date(Date.now() + opts.selfDestruct * 1000).toISOString()
       : null;
 
-    // Encrypt if invite code is available (E2E)
     let storedContent = content.trim();
     let encryptedContent: string | null = null;
     if (inviteCode) {
       encryptedContent = await encryptMessage(content.trim(), inviteCode);
-      storedContent = "[E2E ENCRYPTED]"; // plaintext placeholder (won't be shown, encrypted_content takes precedence)
+      storedContent = "[E2E ENCRYPTED]";
     }
 
     await supabase.from("ghost_messages").insert({
@@ -294,17 +330,44 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
       .eq("user_id", userId);
   };
 
+  const markAsRead = async (messageId: string) => {
+    if (!userId) return;
+    // Don't re-insert if already read
+    if (readReceipts[messageId]?.includes(userId)) return;
+    await supabase.from("ghost_read_receipts").insert({
+      message_id: messageId,
+      user_id: userId,
+    });
+  };
+
+  const markAllAsRead = async () => {
+    if (!userId || messages.length === 0) return;
+    const unreadMessages = messages.filter(
+      m => !m.is_deleted && m.sender_id !== userId && !readReceipts[m.id]?.includes(userId)
+    );
+    if (unreadMessages.length === 0) return;
+    
+    const inserts = unreadMessages.map(m => ({
+      message_id: m.id,
+      user_id: userId,
+    }));
+    await supabase.from("ghost_read_receipts").insert(inserts);
+  };
+
   return {
     messages,
     members,
     typingUsers,
     loading,
+    readReceipts,
     sendMessage,
     sendFile,
     deleteMessage,
     addReaction,
     setTyping,
     markOnline,
+    markAsRead,
+    markAllAsRead,
     refetch: fetchMessages,
   };
 }
@@ -366,7 +429,6 @@ export function useGhostRooms(userId: string | null) {
 
   const joinRoom = async (inviteCode: string, codename: string) => {
     if (!userId) return null;
-    // Try exact match first, then case-insensitive (ilike)
     let { data: room } = await supabase
       .from("ghost_rooms")
       .select("*")
@@ -375,7 +437,6 @@ export function useGhostRooms(userId: string | null) {
       .single();
     if (!room) return null;
 
-    // Check if already member
     const { data: existing } = await supabase
       .from("ghost_members")
       .select("id")
@@ -403,5 +464,33 @@ export function useGhostRooms(userId: string | null) {
     return room;
   };
 
-  return { rooms, myMemberships, fetchRooms, createRoom, joinRoom };
+  const leaveRoom = async (roomId: string) => {
+    if (!userId) return;
+    // Send leave message first
+    const member = myMemberships[roomId];
+    if (member) {
+      await supabase.from("ghost_messages").insert({
+        room_id: roomId,
+        sender_id: userId,
+        content: `AGENT ${member.codename} HAS LEFT THE CHANNEL.`,
+        message_type: "system",
+      });
+    }
+    await supabase
+      .from("ghost_members")
+      .delete()
+      .eq("room_id", roomId)
+      .eq("user_id", userId);
+    await fetchRooms();
+  };
+
+  const updateRoomEmoji = async (roomId: string, emoji: string) => {
+    await supabase
+      .from("ghost_rooms")
+      .update({ channel_emoji: emoji } as any)
+      .eq("id", roomId);
+    await fetchRooms();
+  };
+
+  return { rooms, myMemberships, fetchRooms, createRoom, joinRoom, leaveRoom, updateRoomEmoji };
 }
