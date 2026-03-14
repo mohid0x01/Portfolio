@@ -423,10 +423,17 @@ function GhostMessageBubble({
               </div>
             )}
 
-            {/* Timestamp + status */}
+            {/* Timestamp + status + read receipts */}
             <div className={`text-xs text-muted-foreground/60 mt-1.5 flex items-center gap-1.5 ${isOwn ? "justify-end" : "justify-start"}`}>
               <span>{formatTime(msg.created_at)}</span>
-              {isOwn && <CheckCheck className="w-3 h-3 text-secondary/70" />}
+              {isOwn && msg.read_by && msg.read_by.length > 0 ? (
+                <span className="flex items-center gap-0.5 text-secondary" title={`Read by ${msg.read_by.length}`}>
+                  <CheckCheck className="w-3 h-3" />
+                  <span className="text-[10px]">{msg.read_by.length}</span>
+                </span>
+              ) : isOwn ? (
+                <Check className="w-3 h-3 text-muted-foreground/40" />
+              ) : null}
               {copied && <span className="text-secondary text-xs">Copied!</span>}
             </div>
           </div>

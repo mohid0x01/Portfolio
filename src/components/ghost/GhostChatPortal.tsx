@@ -349,6 +349,7 @@ export function GhostChatPortal() {
                             onSelectRoom={handleSelectRoom}
                             onSignOut={handleSignOut}
                             myCodename={myCodename}
+                            onRoomLeft={() => setSelectedRoom(null)}
                           />
                         </div>
                         {/* Main content */}
