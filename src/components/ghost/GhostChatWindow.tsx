@@ -681,8 +681,9 @@ interface GhostChatWindowProps {
 
 export function GhostChatWindow({ roomId, roomName, userId, inviteCode, onClose }: GhostChatWindowProps) {
   const {
-    messages, members, typingUsers, loading,
-    sendMessage, sendFile, deleteMessage, addReaction, setTyping, markOnline
+    messages, members, typingUsers, loading, readReceipts,
+    sendMessage, sendFile, deleteMessage, addReaction, setTyping, markOnline,
+    markAsRead, markAllAsRead,
   } = useGhostChat(roomId, userId, inviteCode);
 
   const [input, setInput] = useState("");
