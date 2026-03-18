@@ -112,6 +112,9 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
     }
   }, [roomId]);
 
+  const readReceiptsRef = useRef<Record<string, string[]>>({});
+  readReceiptsRef.current = readReceipts;
+
   const fetchMessages = useCallback(async () => {
     if (!roomId) return;
     const { data } = await supabase
@@ -132,6 +135,7 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
         (membersData || []).map((m) => [m.user_id, m])
       );
 
+      const currentReceipts = readReceiptsRef.current;
       const decrypted = await Promise.all(
         data.map(async (msg) => {
           let displayContent = msg.content;
@@ -146,14 +150,14 @@ export function useGhostChat(roomId: string | null, userId: string | null, invit
             reactions: (msg.reactions as Record<string, string[]>) || {},
             sender_codename: memberMap.get(msg.sender_id)?.codename || "GHOST",
             sender_color: memberMap.get(msg.sender_id)?.avatar_color || "#6610F2",
-            read_by: readReceipts[msg.id] || [],
+            read_by: currentReceipts[msg.id] || [],
           };
         })
       );
 
       setMessages(decrypted);
     }
-  }, [roomId, inviteCode, readReceipts]);
+  }, [roomId, inviteCode]);
 
   const fetchMembers = useCallback(async () => {
     if (!roomId) return;

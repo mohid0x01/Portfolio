@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, LogIn, Copy, Check, Hash, LogOut, Terminal,
   Search, Bell, BellOff, Trash2,
-  Star, Users, RefreshCw, X, Zap, Eye
+  Star, Users, RefreshCw, X, Zap, Eye, Link, Share2
 } from "lucide-react";
 import { useGhostRooms, type GhostRoom } from "@/hooks/useGhostChat";
 
