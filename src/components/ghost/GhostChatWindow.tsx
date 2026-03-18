@@ -460,64 +460,96 @@ function GhostMessageBubble({
           )}
         </div>
 
-        {/* Quick actions */}
-        <AnimatePresence>
-          {showActions && msg.message_type !== "system" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              className={`flex flex-col gap-1 self-start mt-6 ${isOwn ? "order-first" : "order-last"}`}
+        {/* WhatsApp-style dropdown arrow */}
+        {showActions && msg.message_type !== "system" && (
+          <div className={`relative self-start mt-6 ${isOwn ? "order-first" : "order-last"}`}>
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => setShowEmojis(!showEmojis)}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-white/10 transition-colors"
             >
-              <button onClick={() => onReply(msg)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Reply">
-                <Reply className="w-3.5 h-3.5" />
-              </button>
-              <div className="relative">
-                <button onClick={() => setShowEmojis(!showEmojis)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors" title="React">
-                  <Smile className="w-3.5 h-3.5" />
-                </button>
-                <AnimatePresence>
-                  {showEmojis && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      className={`absolute ${isOwn ? "right-8" : "left-8"} top-0 z-50 rounded-2xl shadow-xl p-2`}
-                      style={{ background: "hsl(0 0% 8%)", border: "1px solid hsl(0 0% 18%)", width: 280 }}
+              <ChevronDown className="w-4 h-4" />
+            </motion.button>
+
+            <AnimatePresence>
+              {showEmojis && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                  className={`absolute ${isOwn ? "right-0" : "left-0"} top-7 z-50 rounded-xl shadow-2xl overflow-hidden`}
+                  style={{ background: "hsl(0 0% 8%)", border: "1px solid hsl(0 0% 18%)", minWidth: 170 }}
+                >
+                  {/* Quick emoji row */}
+                  <div className="flex gap-0.5 px-2 py-2 border-b border-border/20">
+                    {["👍", "🔥", "💀", "😂", "⚡", "✅"].map((e) => (
+                      <button
+                        key={e}
+                        onClick={() => { onReact(msg.id, e); setShowEmojis(false); setShowActions(false); }}
+                        className="text-sm hover:scale-125 transition-transform p-1 rounded hover:bg-white/10"
+                      >
+                        {e}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShowExtendedEmoji(!showExtendedEmoji)}
+                      className="text-sm p-1 rounded hover:bg-white/10 text-muted-foreground"
                     >
-                      <div className="grid grid-cols-8 gap-1 mb-2">
-                        {EMOJI_REACTIONS.map((e) => (
-                          <button key={e} onClick={() => { onReact(msg.id, e); setShowEmojis(false); }} className="text-base hover:scale-125 transition-transform p-0.5 rounded hover:bg-white/10">
-                            {e}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="h-px bg-border/30 mb-2" />
-                      <div className="grid grid-cols-8 gap-1">
-                        {EMOJI_EXTENDED.map((e) => (
-                          <button key={e} onClick={() => { onReact(msg.id, e); setShowEmojis(false); }} className="text-base hover:scale-125 transition-transform p-0.5 rounded hover:bg-white/10">
-                            {e}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <button onClick={handleCopy} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors" title="Copy">
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => onPin(msg)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 transition-colors" title="Pin">
-                <Pin className="w-3.5 h-3.5" />
-              </button>
-              {isOwn && (
-                <button onClick={() => onDelete(msg.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Destroy">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                      <Smile className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Extended emoji grid */}
+                  <AnimatePresence>
+                    {showExtendedEmoji && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden border-b border-border/20"
+                      >
+                        <div className="grid grid-cols-8 gap-0.5 p-2">
+                          {[...EMOJI_REACTIONS, ...EMOJI_EXTENDED].map((e) => (
+                            <button
+                              key={e}
+                              onClick={() => { onReact(msg.id, e); setShowEmojis(false); setShowActions(false); }}
+                              className="text-sm hover:scale-125 transition-transform p-0.5 rounded hover:bg-white/10"
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Action items */}
+                  <div className="p-1">
+                    {[
+                      { icon: Reply, label: "Reply", action: () => onReply(msg), color: "text-primary" },
+                      { icon: Copy, label: "Copy", action: handleCopy, color: "text-foreground" },
+                      { icon: Forward, label: "Forward", action: () => onForward(msg), color: "text-foreground" },
+                      { icon: Pin, label: "Pin", action: () => onPin(msg), color: "text-yellow-400" },
+                      { icon: Star, label: "Star", action: () => onStar(msg), color: "text-yellow-400" },
+                      ...(isOwn ? [{ icon: Edit3, label: "Edit", action: () => onEdit(msg), color: "text-blue-400" }] : []),
+                      ...(isOwn ? [{ icon: Trash2, label: "Delete", action: () => onDelete(msg.id), color: "text-destructive" }] : []),
+                    ].map((item, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { item.action(); setShowEmojis(false); setShowActions(false); }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-mono hover:bg-white/8 transition-colors ${item.color}`}
+                      >
+                        <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </AnimatePresence>
+          </div>
+        )}
       </motion.div>
     </>
   );

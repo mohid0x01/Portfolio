@@ -187,15 +187,15 @@ export function GhostChatPortal() {
             }`}
             style={{
               ...(isMaximized ? {} : { width: currentSize.w, height: currentSize.h }),
-              background: "hsl(0 0% 4%)",
-              border: "1px solid hsl(261 87% 50% / 0.2)",
-              boxShadow: "0 0 60px hsl(261 87% 50% / 0.12), 0 30px 80px rgba(0,0,0,0.8)",
+              background: "hsl(0 0% 2%)",
+              border: "1px solid hsl(261 87% 50% / 0.15)",
+              boxShadow: "0 0 60px hsl(261 87% 50% / 0.1), 0 30px 80px rgba(0,0,0,0.9)",
             }}
           >
             {/* Title bar */}
             <div
               className="flex items-center gap-3 px-4 py-2.5 flex-shrink-0 border-b border-border/20 select-none"
-              style={{ background: "hsl(0 0% 5%)" }}
+              style={{ background: "hsl(0 0% 3%)" }}
             >
               {/* Traffic lights */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -341,7 +341,7 @@ export function GhostChatPortal() {
                         {/* Sidebar */}
                         <div
                           className="w-52 flex-shrink-0 border-r border-border/20 flex flex-col"
-                          style={{ background: "hsl(0 0% 5%)" }}
+                          style={{ background: "hsl(0 0% 3%)" }}
                         >
                           <GhostRoomList
                             userId={user.id}
@@ -375,7 +375,7 @@ export function GhostChatPortal() {
             {/* Status bar */}
             <div
               className="px-4 py-1.5 flex items-center gap-3 text-xs font-mono text-muted-foreground border-t border-border/15 flex-shrink-0"
-              style={{ background: "hsl(0 0% 3.5%)" }}
+              style={{ background: "hsl(0 0% 2%)" }}
             >
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: statusColor }} />

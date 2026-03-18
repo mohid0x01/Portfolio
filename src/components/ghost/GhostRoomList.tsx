@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, LogIn, Copy, Check, Hash, LogOut, Terminal,
   Search, Bell, BellOff, Trash2,
-  Star, Users, RefreshCw, X, Zap, Eye
+  Star, Users, RefreshCw, X, Zap, Eye, Link, Share2
 } from "lucide-react";
 import { useGhostRooms, type GhostRoom } from "@/hooks/useGhostChat";
 
@@ -51,6 +51,19 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
   const [showInviteFor, setShowInviteFor] = useState<string | null>(null);
   const [confirmLeave, setConfirmLeave] = useState<string | null>(null);
   const [emojiPickerFor, setEmojiPickerFor] = useState<string | null>(null);
+  const defaultChannelCreated = useRef(false);
+
+  // Auto-create default GENERAL channel if user has no rooms
+  useEffect(() => {
+    if (defaultChannelCreated.current) return;
+    if (rooms.length === 0 && userId && myCodename && myCodename !== "GHOST") {
+      defaultChannelCreated.current = true;
+      const savedCodename = localStorage.getItem(`ghost_codename_${userId}`) || myCodename;
+      createRoom("GENERAL", "Default channel — welcome to Ghost Protocol", savedCodename).then((room) => {
+        if (room) onSelectRoom(room);
+      });
+    }
+  }, [rooms.length, userId, myCodename]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +110,14 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
     e?.stopPropagation();
     await navigator.clipboard.writeText(code);
     setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const copyInviteLink = async (code: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const url = `${window.location.origin}/?ghost=${code}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedCode("link_" + code);
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
@@ -253,6 +274,7 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
                 onSelect={() => onSelectRoom(room)}
                 onHover={(id) => setHoveredRoom(id)}
                 onCopy={copyInvite}
+                onCopyLink={copyInviteLink}
                 onMute={toggleMute}
                 onFav={toggleFav}
                 onShowInvite={(id, e) => { e.stopPropagation(); setShowInviteFor(showInviteFor === id ? null : id); }}
@@ -291,6 +313,7 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
               onSelect={() => onSelectRoom(room)}
               onHover={(id) => setHoveredRoom(id)}
               onCopy={copyInvite}
+              onCopyLink={copyInviteLink}
               onMute={toggleMute}
               onFav={toggleFav}
               onShowInvite={(id, e) => { e.stopPropagation(); setShowInviteFor(showInviteFor === id ? null : id); }}
@@ -447,7 +470,7 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
 // Room item component
 function RoomItem({
   room, membership, isSelected, isHovered, isMuted, isFav, copiedCode,
-  showInvite, confirmLeave, emojiPickerOpen, onSelect, onHover, onCopy, onMute, onFav, onShowInvite,
+  showInvite, confirmLeave, emojiPickerOpen, onSelect, onHover, onCopy, onCopyLink, onMute, onFav, onShowInvite,
   onLeave, onConfirmLeave, onCancelLeave, onEmojiPicker, onEmojiSelect, isCreator,
 }: {
   room: GhostRoom;
@@ -463,6 +486,7 @@ function RoomItem({
   onSelect: () => void;
   onHover: (id: string | null) => void;
   onCopy: (code: string, e?: React.MouseEvent) => void;
+  onCopyLink: (code: string, e?: React.MouseEvent) => void;
   onMute: (id: string, e: React.MouseEvent) => void;
   onFav: (id: string, e: React.MouseEvent) => void;
   onShowInvite: (id: string, e: React.MouseEvent) => void;
@@ -611,17 +635,29 @@ function RoomItem({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden mx-2 mb-1"
           >
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/5 border border-secondary/20">
-              <span className="text-xs text-muted-foreground font-mono flex-1 tracking-widest">{room.invite_code}</span>
+            <div className="space-y-2 px-3 py-2 rounded-xl bg-secondary/5 border border-secondary/20">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-mono flex-1 tracking-widest">{room.invite_code}</span>
+                <button
+                  onClick={(e) => onCopy(room.invite_code, e)}
+                  className="text-muted-foreground hover:text-secondary transition-colors flex-shrink-0"
+                  title="Copy invite code"
+                >
+                  {copiedCode === room.invite_code ? (
+                    <Check className="w-3.5 h-3.5 text-secondary" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
               <button
-                onClick={(e) => onCopy(room.invite_code, e)}
-                className="text-muted-foreground hover:text-secondary transition-colors flex-shrink-0"
-                title="Copy invite code"
+                onClick={(e) => onCopyLink(room.invite_code, e)}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs font-mono font-bold text-primary hover:bg-primary/20 transition-colors"
               >
-                {copiedCode === room.invite_code ? (
-                  <Check className="w-3.5 h-3.5 text-secondary" />
+                {copiedCode === "link_" + room.invite_code ? (
+                  <><Check className="w-3 h-3" /> LINK COPIED</>
                 ) : (
-                  <Copy className="w-3.5 h-3.5" />
+                  <><Link className="w-3 h-3" /> COPY INVITE LINK</>
                 )}
               </button>
             </div>
