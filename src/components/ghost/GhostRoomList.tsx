@@ -100,6 +100,14 @@ export function GhostRoomList({ userId, selectedRoomId, onSelectRoom, onSignOut,
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  const copyInviteLink = async (code: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const url = `${window.location.origin}/?ghost=${code}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedCode("link_" + code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchRooms();
